@@ -4,20 +4,7 @@ import * as XLSX from "xlsx";
 
 export default function PriceListPage() {
   const [data, setData] = useState([]);
-  const [search, setSearch] = useState("");
-
-  // useEffect(() => {
-  //   fetch("/data/priceList.xlsx")
-  //     .then((res) => res.arrayBuffer())
-  //     .then((arrayBuffer) => {
-  //       const workbook = XLSX.read(arrayBuffer, { type: "array" });
-  //       const sheetName = workbook.SheetNames[0];
-  //       const sheet = workbook.Sheets[sheetName];
-  //       const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-  //       setData(jsonData);
-  //     })
-  //     .catch((err) => console.error("Error loading Excel file:", err));
-  // }, []);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -37,12 +24,20 @@ export default function PriceListPage() {
       });
   }, []);
 
-  const filteredData = data.filter((row) =>
-    Object.values(row)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  // const filteredData = data.filter((row) =>
+  //   Object.values(row)
+  //     .join(" ")
+  //     .toLowerCase()
+  //     .includes(searchText.toLowerCase())
+  // );
+
+  const filteredData = data.filter((item) => {
+    const target = `${item["Brand"]} ${item["Nama Produk"]}`.toLowerCase(); // combine fields if needed
+    const searchWords = searchText.toLowerCase().split(" ").filter(Boolean);
+
+    // Check if every search word exists somewhere in the target string
+    return searchWords.every((word) => target.includes(word));
+  });
 
   // const columns =
   //   filteredData.length > 0
@@ -78,8 +73,8 @@ export default function PriceListPage() {
       <h2>Price List</h2>
       <Input.Search
         placeholder="Search..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
         style={{ marginBottom: 16, maxWidth: 300 }}
         allowClear
       />
