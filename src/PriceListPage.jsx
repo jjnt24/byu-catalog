@@ -44,14 +44,34 @@ export default function PriceListPage() {
       .includes(search.toLowerCase())
   );
 
-  const columns =
-    filteredData.length > 0
-      ? Object.keys(filteredData[0]).map((key) => ({
-          title: key,
-          dataIndex: key,
-          key,
-        }))
-      : [];
+  // const columns =
+  //   filteredData.length > 0
+  //     ? Object.keys(filteredData[0]).map((key) => ({
+  //         title: key,
+  //         dataIndex: key,
+  //         key,
+  //       }))
+  //     : [];
+  const columns = [
+    {
+      "title":"Brand",
+      "dataIndex":"Brand",
+      "key":"Brand",
+      "width": 150, // fixed width
+    },
+    {
+      "title":"Nama Produk",
+      "dataIndex":"Nama Produk",
+      "key":"Nama Produk",
+      "width": 500, // fixed width
+    },
+    {
+      "title":"Harga Byusoul",
+      "dataIndex":"Harga Byusoul",
+      "key":"Harga Byusoul",
+      "width": 150, // fixed width
+    }
+  ]
 
   return (
     <div style={{ padding: 20 }}>
@@ -69,6 +89,11 @@ export default function PriceListPage() {
         rowKey={(record, index) => index}
         pagination={{ pageSize: 5 }}
         bordered
+        scroll={{ x: "100%" }} // allow horizontal scroll if needed
+        style={{
+          width: "100%", // fit table to container
+          tableLayout: "fixed", // makes column widths fixed
+        }}
       />
     </div>
   );
