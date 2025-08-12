@@ -3,6 +3,7 @@ import { Table, Input, Button, Space, Flex } from "antd";
 import * as XLSX from "xlsx";
 import { CartContext } from "./CartContext";
 import { useNavigate } from "react-router-dom";
+import { DeleteOutlined } from "@ant-design/icons";
 
 export default function PriceListPage({withCart=false}) {
   const [data, setData] = useState([]);
@@ -92,7 +93,13 @@ export default function PriceListPage({withCart=false}) {
               onChange={(e) => updateQty(record.key, Number(e.target.value))}
               style={{ width: 70 }}
             />
-            <Button onClick={() => removeFromCart(record.key)} danger>x</Button>
+            {/* <Button onClick={() => removeFromCart(record.key)} danger>x</Button> */}
+            <Button
+              danger
+              type="text"
+              icon={<DeleteOutlined />}
+              onClick={() => removeFromCart(record.key)}
+            />
           </Space>
         ) : (
           <Button onClick={() => addToCart(record)}>Add to Cart</Button>
