@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { Table, Input } from "antd";
+import React, { useContext, useEffect, useState } from "react";
+import { Table, Input, Button, Space, Flex } from "antd";
 import * as XLSX from "xlsx";
+import { CartContext } from "./CartContext";
+import { useNavigate } from "react-router-dom";
 
-export default function PriceListPage() {
+export default function PriceListPage({withCart=false}) {
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const { cart, addToCart, updateQty, removeFromCart } = useContext(CartContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -17,9 +21,12 @@ export default function PriceListPage() {
         const sliced = json.slice(1);
         // Convert to objects with headers from row 3
         const headers = sliced[0];
-        const rows = sliced.slice(1).map((row) =>
-          Object.fromEntries(headers.map((h, i) => [h, row[i]]))
-        );
+        const rows = sliced.slice(1).map((row, index) => ({
+          key: index + 1, // add unique key
+          ...Object.fromEntries(headers.map((h, i) => [h, row[i]])),
+        }))
+        .filter(item => item.Brand && item.Brand.trim() !== ""); // remove if Brand is empty or null
+
         setData(rows);
       });
   }, []);
@@ -60,7 +67,7 @@ export default function PriceListPage() {
       "dataIndex":"Nama Produk",
       "key":"Nama Produk",
       "width": 500, // fixed width
-      //sorter: (a, b) => a["Harga Byusoul"]?.localeCompare(b["Harga Byusoul"]),
+      sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
     },
     {
       "title":"Harga Byusoul",
@@ -68,12 +75,45 @@ export default function PriceListPage() {
       "key":"Harga Byusoul",
       "width": 150, // fixed width
       sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
-    }
+      render: item => item.toLocaleString(),
+    },
+
+    ...(true ? [{
+      title: "",
+      key: "action",
+      render: (_, record) => {
+        const inCart = cart.find((c) => c.key === record.key);
+        return inCart ? (
+          <Space>
+            <Input
+              type="number"
+              min={1}
+              value={inCart.qty}
+              onChange={(e) => updateQty(record.key, Number(e.target.value))}
+              style={{ width: 70 }}
+            />
+            <Button onClick={() => removeFromCart(record.key)} danger>x</Button>
+          </Space>
+        ) : (
+          <Button onClick={() => addToCart(record)}>Add to Cart</Button>
+        );
+      },
+    }] : []),
   ]
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Price List</h2>
+    <div 
+      style={{ 
+        padding: 20,
+        maxHeight: "90vh", // batas tinggi, biar ga kepenuhan layar
+        overflowY: "auto", // scroll kalau konten melebihi tinggi 
+      }}
+    >
+      <Flex justify="space-between" align="center">
+
+        <h2>Price List</h2>
+        <Button onClick={() => navigate("/cart")}>Check Cart</Button>
+      </Flex>
       <Input.Search
         placeholder="Search..."
         value={searchText}
