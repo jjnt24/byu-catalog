@@ -53,18 +53,21 @@ export default function PriceListPage() {
       "dataIndex":"Brand",
       "key":"Brand",
       "width": 150, // fixed width
+      sorter: (a, b) => a["Brand"]?.localeCompare(b["Brand"]),
     },
     {
       "title":"Nama Produk",
       "dataIndex":"Nama Produk",
       "key":"Nama Produk",
       "width": 500, // fixed width
+      //sorter: (a, b) => a["Harga Byusoul"]?.localeCompare(b["Harga Byusoul"]),
     },
     {
       "title":"Harga Byusoul",
       "dataIndex":"Harga Byusoul",
       "key":"Harga Byusoul",
       "width": 150, // fixed width
+      sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
     }
   ]
 
