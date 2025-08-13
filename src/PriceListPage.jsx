@@ -90,48 +90,44 @@ export default function PriceListPage({withCart=false}) {
       key:"Harga Byusoul",
       width: "20%",
       sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
-      render: (_, record) => (
-        <div>
-          <div style={{ textDecoration: record["Harga Promo"] ? "line-through" : "none" }}>
-            {record["Harga Byusoul"]?.toLocaleString()}
-          </div>
-          {record["Harga Promo"] && (
-            <div style={{ backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
-              {record["Harga Promo"]?.toLocaleString()}
-            </div>
-          )}
-        </div>
-      ),
-    },
-
-    ...(true ? [{
-      title: "",
-      key: "action",
-      width: 80,
       render: (_, record) => {
         const inCart = cart.find((c) => c.key === record.key);
-        return inCart ? (
-          <Space>
-            <Input
-              type="number"
-              min={1}
-              max={9}
-              value={inCart.qty}
-              onChange={(e) => updateQty(record.key, Number(e.target.value))}
-              style={{ width: 70 }}
-            />
-            <Button
-              danger
-              type="text"
-              icon={<DeleteOutlined />}
-              onClick={() => removeFromCart(record.key)}
-            />
-          </Space>
-        ) : (
-          <Button size="small" onClick={() => addToCart(record)}>+</Button>
+        return (
+          <div>
+            <div style={{ textDecoration: record["Harga Promo"] ? "line-through" : "none" }}>
+              {record["Harga Byusoul"]?.toLocaleString()}
+            </div>
+            {record["Harga Promo"] && (
+              <div style={{ backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
+                {record["Harga Promo"]?.toLocaleString()}
+              </div>
+            )}
+            <div style={{ marginTop: 8 }}>
+              {inCart ? (
+                <Space>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={9}
+                    value={inCart.qty}
+                    onChange={(e) => updateQty(record.key, Number(e.target.value))}
+                    style={{ width: 70 }}
+                  />
+                  <Button
+                    danger
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    onClick={() => removeFromCart(record.key)}
+                  />
+                </Space>
+              ) : (
+                <Button size="small" onClick={() => addToCart(record)}>+</Button>
+              )}
+            </div>
+          </div>
         );
       },
-    }] : []),
+    },
   ]
 
   return (

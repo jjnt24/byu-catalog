@@ -2,6 +2,7 @@ import { Table, InputNumber, Button, Space, Flex, Radio, Modal } from "antd";
 import { useContext, useState } from "react";
 import { CartContext } from "./CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { DeleteOutlined } from "@ant-design/icons";
 
 export default function CartPage() {
   const [showPopup, setShowPopup] = useState(false);
@@ -51,24 +52,26 @@ export default function CartPage() {
       title: "Qty",
       key: "qty",
       render: (_, record) => (
-        <InputNumber
-          min={1}
-          value={record.qty}
-          onChange={(value) => updateQty(record.key, value)}
-          style={{ width: 70 }}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <InputNumber
+            min={1}
+            value={record.qty}
+            onChange={(value) => updateQty(record.key, value)}
+            style={{ width: 70 }}
+          />
+          <Button 
+            size="small" 
+            danger 
+            onClick={() => removeFromCart(record.key)} 
+            style={{ padding: 0, width: 24, height: 24, display: "flex", justifyContent: "center", alignItems: "center" }}
+            aria-label="Remove item"
+          >
+            <DeleteOutlined style={{ fontSize: 14 }} />
+          </Button>
+        </div>
       ),
     },
     
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Button size="small" danger onClick={() => removeFromCart(record.key)}>
-          -
-        </Button>
-      ),
-    },
   ];
 
   const total = cart.reduce((sum, item) => {
@@ -84,13 +87,13 @@ export default function CartPage() {
   return (
     <div 
         style={{ 
-            padding: 20,
-            maxHeight: "90vh", // batas tinggi, biar ga kepenuhan layar
+            padding: 15,
+            maxHeight: "100vh", // batas tinggi, biar ga kepenuhan layar
             overflowY: "auto", // scroll kalau konten melebihi tinggi 
         }}
     >
         {namaKamu && (
-          <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "8px", marginBottom: "8px", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ textAlign: "left" }}>
                 <h2>Halo, <strong>{namaKamu}</strong>!</h2>
@@ -99,14 +102,14 @@ export default function CartPage() {
             </div>
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-            <h2>Keranjang</h2>
-            <Space>
-                <Button danger onClick={() => setCart([])}>Hapus Keranjang</Button>
-                <Button onClick={() => navigate("/catalog", { state: { namaKamu, nomorHandphone } })}>Kembali ke Price List</Button>
-            </Space>
+        <div style={{ marginBottom: "8px" }}>
+          <h2>Keranjang</h2>
         </div>
-        <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+          <Button danger onClick={() => setCart([])}>Hapus Keranjang</Button>
+          <Button onClick={() => navigate("/catalog", { state: { namaKamu, nomorHandphone } })}>Kembali ke Price List</Button>
+        </div>
+        <div style={{ maxHeight: "100vh", overflowY: "auto" }}>
           <Table
             columns={columns}
             dataSource={cart}
@@ -130,14 +133,14 @@ export default function CartPage() {
             }}
           />
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: 16, marginTop: 16 }}>
-          <div style={{ fontWeight: "bold", width: "100%", maxWidth: "200px", marginBottom: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: 20, marginTop: 8 }}>
+          <div style={{ fontWeight: "bold", width: "100%", maxWidth: "200px", marginBottom: 8, textAlign: "right" }}>
             Total: Rp {total.toLocaleString()}
           </div>
           <Button
             type="primary"
             size="large"
-            style={{ width: "100%", maxWidth: "200px", marginBottom: 8 }}
+            style={{ width: "100%", maxWidth: "200px", marginBottom: 8, backgroundColor: "#25D366", borderColor: "#25D366", display: "flex", alignItems: "center", justifyContent: "center" }}
             onClick={async () => {
               const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.nextSibling?.textContent || '';
               let orderText = `*Hai Minsoul, aku mau pesan barang ini ya. Boleh tolong di cek?*\n\n`;
@@ -162,6 +165,7 @@ export default function CartPage() {
               }, 4000);
             }}
           >
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WA" style={{ width: 20, height: 20, marginRight: 8 }} />
             Konfirmasi Pesanan
           </Button>
         </div>
@@ -169,7 +173,7 @@ export default function CartPage() {
             textAlign: "left",
             marginTop: 16,
             border: "1px solid #ccc",
-            padding: "12px",
+            padding: "15px",
             borderRadius: "6px",
             backgroundColor: "#f9f9f9"
           }}>
