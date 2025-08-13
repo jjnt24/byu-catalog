@@ -104,13 +104,14 @@ export default function CartPage() {
         <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
           <Table columns={columns} dataSource={cart} rowKey="key" pagination={false} />
         </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 16, gap: 16 }}>
-          <div style={{ fontWeight: "bold" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: 16, marginTop: 16 }}>
+          <div style={{ fontWeight: "bold", width: "100%", maxWidth: "200px", marginBottom: 8 }}>
             Total: Rp {total.toLocaleString()}
           </div>
           <Button
             type="primary"
             size="large"
+            style={{ width: "100%", maxWidth: "200px", marginBottom: 8 }}
             onClick={async () => {
               const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.nextSibling?.textContent || '';
               let orderText = `*Hai Minsoul, aku mau pesan barang ini ya. Boleh tolong di cek?*\n\n`;

@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useMemo } from "react";
 import { Table, Input, Button, Space, Flex, Select } from "antd";
 import * as XLSX from "xlsx";
+import { useDebounce } from "use-debounce";
 import { CartContext } from "./CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DeleteOutlined } from "@ant-design/icons";
@@ -8,6 +9,8 @@ import { DeleteOutlined } from "@ant-design/icons";
 export default function PriceListPage({withCart=false}) {
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearch] = useDebounce(searchText, 300);
+  const [loading, setLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const { cart, addToCart, updateQty, removeFromCart } = useContext(CartContext);
   const navigate = useNavigate();
@@ -32,62 +35,53 @@ export default function PriceListPage({withCart=false}) {
         .filter(item => item.Brand && item.Brand.trim() !== ""); // remove if Brand is empty or null
 
         setData(rows);
+        setLoading(false);
       });
   }, []);
 
   const brandOptions = Array.from(new Set(data.map(item => item.Brand))).filter(Boolean);
 
-  const filteredData = data.filter((item) => {
-    const target = `${item["Brand"]} ${item["Nama Produk"]}`.toLowerCase(); // combine fields if needed
-    const searchWords = searchText.toLowerCase().split(" ").filter(Boolean);
-    const matchesSearch = searchWords.every((word) => target.includes(word));
-    const matchesBrand = selectedBrand ? item.Brand === selectedBrand : true;
-    return matchesSearch && matchesBrand;
-  });
+  const filteredData = useMemo(() => {
+    if (!debouncedSearch) return [];
+    return data.filter((item) => {
+      const target = `${item.Brand} ${item["Nama Produk"]}`.toLowerCase();
+      const searchWords = debouncedSearch.toLowerCase().split(" ").filter(Boolean);
+      const matchesSearch = searchWords.every((word) => target.includes(word));
+      const matchesBrand = selectedBrand ? item.Brand === selectedBrand : true;
+      return matchesSearch && matchesBrand;
+    });
+  }, [data, debouncedSearch, selectedBrand]);
 
-  // const columns =
-  //   filteredData.length > 0
-  //     ? Object.keys(filteredData[0]).map((key) => ({
-  //         title: key,
-  //         dataIndex: key,
-  //         key,
-  //       }))
-  //     : [];
   const columns = [
     {
-      "title":"Brand",
-      "dataIndex":"Brand",
-      "key":"Brand",
-      "width": 150, // fixed width
+      title:"Brand",
+      dataIndex:"Brand",
+      key:"Brand",
+      width: "20%",
       sorter: (a, b) => a["Brand"]?.localeCompare(b["Brand"]),
     },
     {
-      "title":"Nama Produk",
-      "dataIndex":"Nama Produk",
-      "key":"Nama Produk",
-      "width": 300, // fixed width
-      render: (text) => <div style={{ whiteSpace: "normal" }}>{text}</div>,
+      title:"Nama Produk",
+      dataIndex:"Nama Produk",
+      key:"Nama Produk",
+      width: "40%",
       sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
     },
     {
-      "title":"Harga Byusoul",
-      "dataIndex":"Harga Byusoul",
-      "key":"Harga Byusoul",
-      "width": 150, // fixed width
+      title:"Harga Byusoul",
+      dataIndex:"Harga Byusoul",
+      key:"Harga Byusoul",
+      width: "20%",
       sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
-      render: item => item.toLocaleString(),
+      render: item => item?.toLocaleString(),
     },
     {
       title: "Harga Promo",
       dataIndex: "Harga Promo",
       key: "Harga Promo",
-      width: 150,
+      width: "20%",
       sorter: (a, b) => a["Harga Promo"] - b["Harga Promo"],
-      render: (item) => (
-        <div style={{ backgroundColor: item ? "yellow" : "transparent" }}>
-          {item?.toLocaleString()}
-        </div>
-      ),
+      render: (item) => item ? item.toLocaleString() : "",
     },
 
     ...(true ? [{
@@ -101,7 +95,7 @@ export default function PriceListPage({withCart=false}) {
               type="number"
               min={1}
               value={inCart.qty}
-              onChange={(e) => updateQty(record.key, Number(e.target.value))}
+      onChange={(e) => updateQty(record.key, Number(e.target.value))}
               style={{ width: 70 }}
             />
             {/* <Button onClick={() => removeFromCart(record.key)} danger>x</Button> */}
@@ -148,8 +142,9 @@ export default function PriceListPage({withCart=false}) {
         3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
       </p>
   
-      <Flex justify="space-between" align="center" style={{ marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ marginBottom: 8, width: "100%", maxWidth: 200 }}>
+      <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ marginBottom: 8, marginRight: 16, width: "100%", maxWidth: 250, flex: 1 }}>
+          <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
           <Select
             placeholder="Filter Brand disini..."
             value={selectedBrand}
@@ -165,7 +160,8 @@ export default function PriceListPage({withCart=false}) {
             ))}
           </Select>
         </div>
-        <div style={{ marginBottom: 8, width: "100%", maxWidth: 300 }}>
+        <div style={{ marginBottom: 8, width: "100%", maxWidth: 400, flex: 2 }}>
+          <div style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</div>
           <Input.Search
             placeholder="Search..."
             value={searchText}
@@ -174,27 +170,36 @@ export default function PriceListPage({withCart=false}) {
             allowClear
           />
         </div>
-        <div style={{ marginBottom: 8, width: "100%", maxWidth: 200 }}>
-          <Button onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })}>Lihat Keranjang</Button>
+        <div style={{ marginBottom: 8, width: "100%", maxWidth: 250, display: "flex", justifyContent: "flex-end" }}>
+          <Button 
+            onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
+            style={{ backgroundColor: "#1890ff", color: "#fff", border: "none", width: 200 }}
+          >
+            Lihat Keranjang
+          </Button>
         </div>
       </Flex>
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey={(record, index) => index}
-        pagination={false}
-        bordered
-        scroll={{
-          y: window.innerHeight - 300,
-          x: window.innerWidth < 1024 ? "100%" : false
-        }} // allow vertical and horizontal scroll
-        style={{
-          width: "100%", // fit table to container
-          maxWidth: "1200px",
-          margin: "0 auto",
-          tableLayout: "fixed", // makes column widths fixed
-        }}
-      />
+      {!loading && searchText ? (
+        <div style={{ width: "100%", margin: "0 auto" }}>
+          <Table
+            columns={columns}
+            dataSource={filteredData}
+            rowKey={(record, index) => index}
+            pagination={false}
+            bordered
+            style={{
+              width: "100%",
+              tableLayout: "auto",
+            }}
+          />
+        </div>
+      ) : searchText ? (
+        <p>Loading data...</p>
+      ) : (
+        <div style={{ backgroundColor: "rgba(0,0,0,0.05)", padding: 40, borderRadius: 8, textAlign: "center", color: "#555", minWidth: "100%" }}>
+          Ketik produk yang ingin kamu cari...
+        </div>
+      )}
     </div>
   );
 }

@@ -51,7 +51,15 @@ const Login = () => {
               { min: 10, message: 'Nomor handphone tidak valid' }
             ]}
           >
-            <Input />
+            <Input 
+              type="tel" 
+              pattern="[0-9]*"
+              onKeyPress={(e) => {
+                if (!/[0-9]/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
