@@ -116,18 +116,17 @@ export default function PriceListPage({withCart=false}) {
         overflowY: "auto", // scroll kalau konten melebihi tinggi 
       }}
     >
-      <Flex justify="space-between" align="center">
-
-        <h2>Price List</h2>
+      <h2>Price List</h2>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+        <Input.Search
+          placeholder="Search..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{ maxWidth: 300 }}
+          allowClear
+        />
         <Button onClick={() => navigate("/cart")}>Check Cart</Button>
       </Flex>
-      <Input.Search
-        placeholder="Search..."
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-        style={{ marginBottom: 16, maxWidth: 300 }}
-        allowClear
-      />
       <Table
         columns={columns}
         dataSource={filteredData}
