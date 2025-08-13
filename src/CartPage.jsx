@@ -12,6 +12,8 @@ export default function CartPage() {
   const storedData = JSON.parse(localStorage.getItem("userData") || "{}");
   const { namaKamu, nomorHandphone } = location.state || storedData;
 
+  const totalQty = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+
   const columns = [
     {
       title: "Nama Produk",
@@ -94,14 +96,14 @@ export default function CartPage() {
           <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "8px", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ textAlign: "left" }}>
-                <h2>Halo, <strong>{namaKamu}</strong>!</h2>
-                <p>Nomor Kontak: {nomorHandphone}</p>
+                <h2 style={{ marginBottom: "0px" }}>Halo, <strong>{namaKamu}</strong>!</h2>
+                <p style={{ marginTop: 0 }}>Nomor Kontak: {nomorHandphone}</p>
               </div>
             </div>
           </div>
         )}
         <div style={{ marginBottom: "8px" }}>
-          <h2>Keranjang</h2>
+          <h2>Keranjang ({totalQty})</h2>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
           <Button danger onClick={() => setCart([])}>Hapus Keranjang</Button>

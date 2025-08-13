@@ -8,15 +8,15 @@ import { DeleteOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import MobileScrollable from "./MobileScrollable";
 
 export default function PriceListPage({withCart=false}) {
-  const [data, setData] = useState([]);
-  const [searchText, setSearchText] = useState("");
-  const [debouncedSearch] = useDebounce(searchText, 300);
-  const [loading, setLoading] = useState(true);
-  const [selectedBrand, setSelectedBrand] = useState(null);
   const { cart, addToCart, updateQty, removeFromCart } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
-  const { namaKamu, nomorHandphone } = location.state || {};
+  const { namaKamu, nomorHandphone, searchValue } = location.state || {};
+  const [searchText, setSearchText] = useState(searchValue || "");
+  const [data, setData] = useState([]);
+  const [debouncedSearch] = useDebounce(searchText, 300);
+  const [loading, setLoading] = useState(true);
+  const [selectedBrand, setSelectedBrand] = useState(null);
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -151,14 +151,17 @@ export default function PriceListPage({withCart=false}) {
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", color: "#000", colorScheme: "light" }}>
       <MobileScrollable style={{ padding: 16 }}>
         {namaKamu && (
-          <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "16px", borderRadius: "8px" }}>
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "16px", borderRadius: "8px", position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ textAlign: "left" }}>
-                <h2>
+                <h2 style={{ marginBottom: "0px" }}>
                   Halo, <strong>{namaKamu}</strong>!
                 </h2>
                 <p>
-                  Nomor Kontak: {nomorHandphone}
+                  Nomor Kontak: {nomorHandphone}<br />
+                  <a href="/login" style={{ color: "#1890ff", textDecoration: "underline", cursor: "pointer", fontSize: "12px" }}>
+                    Ubah Data
+                  </a>
                 </p>
               </div>
             </div>
@@ -264,6 +267,11 @@ export default function PriceListPage({withCart=false}) {
           </div>
         )}
       </MobileScrollable>
+      <div style={{ position: "fixed", bottom: "16px", right: "16px" }}>
+        <Button type="default" onClick={() => navigate("/")} style={{ backgroundColor: "#fff" }}>
+          Kembali ke Halaman Utama
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Landing from "./Landing";
 // import HomePage from "./HomePage";
 import PriceListPage from "./PriceListPage";
 import { CartProvider } from "./CartContext";
@@ -19,7 +20,8 @@ function App() {
           </nav> */}
 
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/catalog" element={<PriceListPage withCart={true} />} />
             <Route path="/cart" element={<CartPage />} />
           </Routes>
