@@ -9,20 +9,22 @@ import Login from "./Login";
 function App() {
   return (
     <CartProvider>
-      <Router>
-        {/* <nav style={{ padding: 10, background: "#f0f0f0", marginBottom: 20 }}>
-          <Link to="/" style={{ marginRight: 10 }}>
-            Home
-          </Link>
-          <Link to="/catalog">Price List</Link>
-        </nav> */}
+      <div style={{ backgroundColor: "#fff", color: "#000", minHeight: "100vh" }}>
+        <Router>
+          {/* <nav style={{ padding: 10, background: "#f0f0f0", marginBottom: 20 }}>
+            <Link to="/" style={{ marginRight: 10 }}>
+              Home
+            </Link>
+            <Link to="/catalog">Price List</Link>
+          </nav> */}
 
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/catalog" element={<PriceListPage withCart={true} />} />
-          <Route path="/cart" element={<CartPage />} />
-        </Routes>
-      </Router>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/catalog" element={<PriceListPage withCart={true} />} />
+            <Route path="/cart" element={<CartPage />} />
+          </Routes>
+        </Router>
+      </div>
     </CartProvider>
   );
 }
