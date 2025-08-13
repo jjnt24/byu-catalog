@@ -264,15 +264,12 @@ const Landing = () => {
             >
               ×
             </button>
-            <h2 style={{ textAlign: "center", marginBottom: "5px" }}>
-              Tunggu sebentar..
+            <h2 style={{ textAlign: "left", marginBottom: "10px" }}>
+              Data Pemesan
             </h2>
-            <p style={{ textAlign: "center", marginBottom: "10px" }}>
-              Isi data berikut untuk melanjutkan ya Byuties!
-            </p>
             <input
               type="text"
-              placeholder="Nama Kamu"
+              placeholder="Nama"
               value={namaKamu}
               onChange={(e) => setNamaKamu(e.target.value)}
               style={{
@@ -288,7 +285,7 @@ const Landing = () => {
             {nameError && <div style={{ color: "red", fontSize: "12px", marginBottom: "8px" }}>{nameError}</div>}
             <input
               type="tel"
-              placeholder="Nomor Handphone"
+              placeholder="Nomor WhatsApp"
               value={nomorHandphone}
               onChange={(e) => setNomorHandphone(e.target.value.replace(/\D/, ""))}
               maxLength={14}
@@ -305,17 +302,19 @@ const Landing = () => {
             {phoneError && <div style={{ color: "red", fontSize: "12px", marginBottom: "8px" }}>{phoneError}</div>}
             <button
               style={{
-                width: "100%",
-                padding: "10px",
+                width: "150px",          // smaller width
+                padding: "8px 12px",     // smaller padding
                 borderRadius: "6px",
                 backgroundColor: "#f82896",
                 color: "#fff",
                 border: "none",
                 cursor: "pointer",
+                display: "block",        // center the button
+                margin: "10px auto 0 auto", // center horizontally with top margin
               }}
               onClick={handleLihatProduk}
             >
-              Cari Produk
+              Mulai Pencarian
             </button>
           </div>
         </div>

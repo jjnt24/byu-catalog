@@ -6,6 +6,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 
 export default function CartPage() {
   const [showPopup, setShowPopup] = useState(false);
+  const [selectedShipping, setSelectedShipping] = useState("Online delivery");
   const { cart, updateQty, removeFromCart, setCart } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +58,7 @@ export default function CartPage() {
             min={1}
             value={record.qty}
             onChange={(value) => updateQty(record.key, value)}
-            style={{ width: 70 }}
+            style={{ width: 70, backgroundColor: "#fff", color: "#000" }}
           />
           <Button 
             size="small" 
@@ -142,7 +143,6 @@ export default function CartPage() {
             size="large"
             style={{ width: "100%", maxWidth: "200px", marginBottom: 8, backgroundColor: "#1890ff", borderColor: "#1890ff", display: "flex", alignItems: "center", justifyContent: "center" }}
             onClick={async () => {
-              const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.parentElement?.textContent || '';
               let orderText = `*Hai Minsoul, aku mau pesan barang ini ya. Boleh tolong di cek?*\n\n`;
               orderText += `Nama: ${namaKamu}\nNomor HP: ${nomorHandphone}\nPesanan:\n`;
               cart.forEach((item, idx) => {
@@ -178,13 +178,17 @@ export default function CartPage() {
           }}>
           <div>
             <strong>Metode pengiriman:</strong>
-            <Radio.Group defaultValue="Online delivery" style={{ display: "flex", flexDirection: "column", marginTop: 8, fontSize: "16px", lineHeight: "1.8" }}>
-              <Radio value="Online delivery">Online delivery (Gojek/Grab/Maxim)</Radio>
-              <Radio value="Pick up store">Pick up store: Byusoul Taman Siswa (<a href="https://maps.app.goo.gl/thFLGFGjtMXLjDsf7" target="_blank" rel="noopener noreferrer">Gmaps</a>)</Radio>
-              <Radio value="Long distance">Kirim jarak jauh (JNE, J&amp;T, dll.)</Radio>
-              <Radio value="Free same day">FREE ONGKIR same day (minimal Rp 50k) untuk pengiriman dalam Ring Road Jogja</Radio>
-              <Radio value="Other">Lainnya</Radio>
-            </Radio.Group>
+            <select
+              value={selectedShipping}
+              onChange={(e) => setSelectedShipping(e.target.value)}
+              style={{ width: "100%", marginTop: 8, padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "16px", backgroundColor: "#fff", color: "#000" }}
+            >
+              <option value="Online delivery">Online delivery (Gojek/Grab/Maxim)</option>
+              <option value="Pick up store">Pick up store: Byusoul Taman Siswa (Gmaps)</option>
+              <option value="Long distance">Kirim jarak jauh (JNE, J&T, dll.)</option>
+              <option value="Free same day">FREE ONGKIR same day (minimal Rp 50k) untuk pengiriman dalam Ring Road Jogja</option>
+              <option value="Other">Lainnya</option>
+            </select>
           </div>
         </div>
         {showPopup && (
@@ -202,6 +206,7 @@ export default function CartPage() {
           }}>
             <div style={{
               backgroundColor: "white",
+              color: "#000",
               padding: 32,
               borderRadius: 12,
               textAlign: "center",

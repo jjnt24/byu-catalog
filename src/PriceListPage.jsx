@@ -17,6 +17,7 @@ export default function PriceListPage({withCart=false}) {
   const [debouncedSearch] = useDebounce(searchText, 300);
   const [loading, setLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState(null);
+  const [showLauncherPopup, setShowLauncherPopup] = useState(true);
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -149,6 +150,54 @@ export default function PriceListPage({withCart=false}) {
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", color: "#000", colorScheme: "light" }}>
+      {showLauncherPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 3000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "24px",
+              maxWidth: "400px",
+              width: "90%",
+              textAlign: "center",
+            }}
+          >
+            <h2 style={{ marginBottom: "16px" }}>Selamat Datang di Byusoul Online!</h2>
+            <ol style={{ textAlign: "left", marginBottom: "24px", paddingLeft: "20px" }}>
+              <li>Cari barang berdasarkan nama produk lewat kolom yang tersedia</li>
+              <li>Klik tombol <strong>"+"</strong> di sebelah harga untuk tambah ke keranjang</li>
+              <li>Klik logo keranjang untuk cek belanjaan kamu</li>
+            </ol>
+            <button
+              onClick={() => setShowLauncherPopup(false)}
+              style={{
+                backgroundColor: "#f82896",
+                color: "#fff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "8px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Oke Byuties!
+            </button>
+          </div>
+        </div>
+      )}
       <MobileScrollable style={{ padding: 16 }}>
         {namaKamu && (
           <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "16px", borderRadius: "8px", position: "relative" }}>
@@ -167,12 +216,9 @@ export default function PriceListPage({withCart=false}) {
             </div>
           </div>
         )}
-        <p style={{ fontStyle: "italic" }}>
-          <strong>Selamat Datang di Byusoul Online Order!</strong><br />
-          Silakan pilih produk yang ingin kamu beli, lalu klik tombol <strong>"+"</strong> untuk memasukkan ke keranjang belanja<br />
-        
-        </p>
-    
+        <p style={{ fontStyle: "normal" }}>
+          <strong>Produk Byusoul</strong><br /></p>
+          
         <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
           <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
           <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
