@@ -242,6 +242,7 @@ export default function PriceListPage({withCart=false}) {
                 width: "100%",
                 tableLayout: "auto",
               }}
+              scroll={{ x: "100%" }}
               components={{
                 header: {
                   cell: ({ children, ...props }) => (

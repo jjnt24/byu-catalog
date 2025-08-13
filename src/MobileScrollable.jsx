@@ -28,6 +28,8 @@ export default function MobileScrollable({ children, style, className }) {
       ref={containerRef}
       className={`mobile-scrollable ${className || ""}`}
       style={{
+        width: "100%",
+        overflowX: "hidden",
         overflowY: "auto",
         WebkitOverflowScrolling: "touch", // smooth scroll iOS
         ...style,
