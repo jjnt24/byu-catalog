@@ -42,12 +42,13 @@ export default function PriceListPage({withCart=false}) {
   const brandOptions = Array.from(new Set(data.map(item => item.Brand))).filter(Boolean);
 
   const filteredData = useMemo(() => {
-    if (!debouncedSearch) return [];
+    if (!debouncedSearch && !selectedBrand) return [];
     return data.filter((item) => {
+      const matchesBrand = selectedBrand ? item.Brand === selectedBrand : true;
+      if (!debouncedSearch) return matchesBrand;
       const target = `${item.Brand} ${item["Nama Produk"]}`.toLowerCase();
       const searchWords = debouncedSearch.toLowerCase().split(" ").filter(Boolean);
       const matchesSearch = searchWords.every((word) => target.includes(word));
-      const matchesBrand = selectedBrand ? item.Brand === selectedBrand : true;
       return matchesSearch && matchesBrand;
     });
   }, [data, debouncedSearch, selectedBrand]);
@@ -68,22 +69,21 @@ export default function PriceListPage({withCart=false}) {
       sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
     },
     {
-      title:"Harga Byusoul",
+      title:"Harga Byu",
       dataIndex:"Harga Byusoul",
       key:"Harga Byusoul",
       width: "20%",
       sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
-      render: item => item?.toLocaleString(),
-    },
-    {
-      title: "Harga Promo",
-      dataIndex: "Harga Promo",
-      key: "Harga Promo",
-      width: "20%",
-      sorter: (a, b) => a["Harga Promo"] - b["Harga Promo"],
-      render: (item) => (
-        <div style={{ backgroundColor: item ? "yellow" : "transparent", padding: "4px 8px" }}>
-          {item ? item.toLocaleString() : ""}
+      render: (_, record) => (
+        <div>
+          <div style={{ textDecoration: record["Harga Promo"] ? "line-through" : "none" }}>
+            {record["Harga Byusoul"]?.toLocaleString()}
+          </div>
+          {record["Harga Promo"] && (
+            <div style={{ backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
+              {record["Harga Promo"]?.toLocaleString()}
+            </div>
+          )}
         </div>
       ),
     },
@@ -184,13 +184,13 @@ export default function PriceListPage({withCart=false}) {
         </div>
         </Flex>
       </div>
-      {!loading && searchText ? (
+      {!loading && (searchText || selectedBrand) ? (
         <div style={{ width: "100%", margin: "0 auto" }}>
           <Table
             columns={columns}
             dataSource={filteredData}
             rowKey={(record, index) => index}
-            pagination={false}
+            pagination={{ pageSize: 5 }}
             bordered
             style={{
               width: "100%",

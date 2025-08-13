@@ -29,29 +29,33 @@ export default function CartPage() {
     },
 
     {
-        "title":"Harga",
-        "dataIndex":"Harga Byusoul",
-        "key":"Harga Byusoul",
-        "width": 150, // fixed width
-        render: item => item.toLocaleString(),
-        sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
-    },
-    {
-      title: "Harga Promo",
-      dataIndex: "Harga Promo",
-      key: "Harga Promo",
+      title:"Harga",
+      dataIndex:"Harga Byusoul",
+      key:"Harga Byusoul",
       width: 150,
-      render: (item) => item?.toLocaleString(),
-      sorter: (a, b) => a["Harga Promo"] - b["Harga Promo"],
+      render: (_, record) => (
+        <div>
+          <div style={{ textDecoration: record["Harga Promo"] ? "line-through" : "none" }}>
+            {record["Harga Byusoul"]?.toLocaleString()}
+          </div>
+          {record["Harga Promo"] && (
+            <div style={{ backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
+              {record["Harga Promo"]?.toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
+      sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
     },
     {
-      title: "Quantity",
+      title: "Qty",
       key: "qty",
       render: (_, record) => (
         <InputNumber
           min={1}
           value={record.qty}
           onChange={(value) => updateQty(record.key, value)}
+          style={{ width: 70 }}
         />
       ),
     },
@@ -60,8 +64,8 @@ export default function CartPage() {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Button danger onClick={() => removeFromCart(record.key)}>
-          Remove
+        <Button size="small" danger onClick={() => removeFromCart(record.key)}>
+          -
         </Button>
       ),
     },
@@ -102,7 +106,28 @@ export default function CartPage() {
             </Space>
         </div>
         <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-          <Table columns={columns} dataSource={cart} rowKey="key" pagination={false} />
+          <Table
+            columns={columns}
+            dataSource={cart}
+            rowKey="key"
+            pagination={false}
+            components={{
+              header: {
+                cell: ({ children, ...props }) => (
+                  <th {...props} style={{ padding: "4px 8px" }}>
+                    {children}
+                  </th>
+                ),
+              },
+              body: {
+                cell: ({ children, ...props }) => (
+                  <td {...props} style={{ padding: "4px 8px" }}>
+                    {children}
+                  </td>
+                ),
+              },
+            }}
+          />
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: 16, marginTop: 16 }}>
           <div style={{ fontWeight: "bold", width: "100%", maxWidth: "200px", marginBottom: 8 }}>
