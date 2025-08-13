@@ -140,9 +140,9 @@ export default function CartPage() {
           <Button
             type="primary"
             size="large"
-            style={{ width: "100%", maxWidth: "200px", marginBottom: 8, backgroundColor: "#25D366", borderColor: "#25D366", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ width: "100%", maxWidth: "200px", marginBottom: 8, backgroundColor: "#1890ff", borderColor: "#1890ff", display: "flex", alignItems: "center", justifyContent: "center" }}
             onClick={async () => {
-              const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.nextSibling?.textContent || '';
+              const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.parentElement?.textContent || '';
               let orderText = `*Hai Minsoul, aku mau pesan barang ini ya. Boleh tolong di cek?*\n\n`;
               orderText += `Nama: ${namaKamu}\nNomor HP: ${nomorHandphone}\nPesanan:\n`;
               cart.forEach((item, idx) => {
@@ -165,7 +165,6 @@ export default function CartPage() {
               }, 4000);
             }}
           >
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WA" style={{ width: 20, height: 20, marginRight: 8 }} />
             Konfirmasi Pesanan
           </Button>
         </div>
