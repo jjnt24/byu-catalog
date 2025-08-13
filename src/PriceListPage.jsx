@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState, useMemo } from "react";
-import { Table, Input, Button, Space, Flex, Select } from "antd";
+import { Table, Input, Button, Space, Flex, Badge } from "antd";
 import * as XLSX from "xlsx";
 import { useDebounce } from "use-debounce";
 import { CartContext } from "./CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import MobileScrollable from "./MobileScrollable";
 
 export default function PriceListPage({withCart=false}) {
@@ -121,7 +121,29 @@ export default function PriceListPage({withCart=false}) {
                   />
                 </Space>
               ) : (
-                <Button size="small" onClick={() => addToCart(record)}>+</Button>
+                <Button size="small" onClick={() => {
+                  addToCart(record);
+                  // create flying animation element
+                  const flying = document.createElement('div');
+                  flying.innerText = '+';
+                  flying.style.position = 'absolute';
+                  flying.style.left = `${window.innerWidth / 2}px`;
+                  flying.style.top = `${window.innerHeight / 2}px`;
+                  flying.style.fontSize = '16px';
+                  flying.style.transition = 'all 0.8s ease-in-out';
+                  document.body.appendChild(flying);
+                  const cartBtn = document.querySelector('#cart-button');
+                  const rect = cartBtn.getBoundingClientRect();
+                  requestAnimationFrame(() => {
+                    flying.style.left = `${rect.left + rect.width/2}px`;
+                    flying.style.top = `${rect.top + rect.height/2}px`;
+                    flying.style.opacity = 0;
+                    flying.style.transform = 'scale(0.2)';
+                  });
+                  setTimeout(() => {
+                    document.body.removeChild(flying);
+                  }, 800);
+                }}>+</Button>
               )}
             </div>
           </div>
@@ -131,10 +153,10 @@ export default function PriceListPage({withCart=false}) {
   ]
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", color: "#000" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", color: "#000", colorScheme: "light" }}>
       <MobileScrollable style={{ padding: 16 }}>
         {namaKamu && (
-          <div style={{ backgroundColor: "#fee4f1ff", padding: "4px 12px", marginBottom: "16px", borderRadius: "8px" }}>
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "16px", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ textAlign: "left" }}>
                 <h2>
@@ -149,48 +171,62 @@ export default function PriceListPage({withCart=false}) {
         )}
         <p style={{ fontStyle: "italic" }}>
           <strong>Selamat Datang di Byusoul Online Order!</strong><br />
-          1. Cari produk dan klik "Tambahkan"<br />
-          2. Klik “Lihat Keranjang”<br />
-          3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
+          Silakan pilih produk yang ingin kamu beli, lalu klik tombol <strong>"+"</strong> untuk memasukkan ke keranjang belanja<br />
+        
         </p>
     
         <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
           <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
           <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
             <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
-            <Select
-              placeholder="Filter Brand disini..."
-              value={selectedBrand}
-              onChange={(value) => setSelectedBrand(value)}
-              allowClear
-              style={{ width: "100%", fontSize: "16px" }}
-              dropdownStyle={{ fontSize: "16px", maxHeight: "250px" }}
+            <select
+              value={selectedBrand || ""}
+              onChange={(e) => setSelectedBrand(e.target.value || null)}
+              style={{ 
+                width: "100%", 
+                fontSize: "16px", 
+                padding: "4px", 
+                borderRadius: "4px", 
+                backgroundColor: "#fff", 
+                color: "#000", 
+                WebkitAppearance: "menulist-button", 
+                appearance: "menulist-button" 
+              }}
             >
+              <option value="">Semua</option>
               {brandOptions.map((brand) => (
-                <Select.Option key={brand} value={brand}>
-                  {brand}
-                </Select.Option>
+                <option key={brand} value={brand}>{brand}</option>
               ))}
-            </Select>
+            </select>
           </div>
-          <div style={{ marginBottom: 8, flex: 2, minWidth: 150, marginRight: 16 }}>
-            <div style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</div>
-            <Input.Search
+          <div style={{ marginBottom: 8, flex: 2, minWidth: 70, marginRight: 16, display: "flex", flexDirection: "column" }}>
+            <label style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</label>
+            <input
+              type="search"
               placeholder="Search..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: "100%", fontSize: "16px" }}
-              allowClear
+              style={{
+                width: "100%",
+                maxWidth: "1500px",
+                fontSize: "16px",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                border: "1px solid #d9d9d9",
+              }}
             />
           </div>
           <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end", minWidth: 100 }}>
-            <Button 
-              size="small"
-              onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
-              style={{ border: "1px solid #1890ff", color: "#1890ff", width: 120, backgroundColor: "transparent", height: "40px", padding: 0 }}
-            >
-              Cek Keranjang
-            </Button>
+            <Badge count={cart.reduce((acc, item) => acc + item.qty, 0)} size="small" style={{ marginRight: 8 }}>
+              <Button 
+                id="cart-button"
+                size="small"
+                onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
+                style={{ border: "1px solid #1890ff", color: "#1890ff", width: 40, height: 40, backgroundColor: "transparent", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: -10 }}
+              >
+                <ShoppingCartOutlined style={{ fontSize: 20 }} />
+              </Button>
+            </Badge>
           </div>
           </Flex>
         </MobileScrollable>

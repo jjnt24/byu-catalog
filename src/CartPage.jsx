@@ -93,7 +93,7 @@ export default function CartPage() {
         }}
     >
         {namaKamu && (
-          <div style={{ backgroundColor: "#fee4f1ff", padding: "8px", marginBottom: "8px", borderRadius: "8px" }}>
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "12px 12px 1px 15px", marginBottom: "8px", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ textAlign: "left" }}>
                 <h2>Halo, <strong>{namaKamu}</strong>!</h2>

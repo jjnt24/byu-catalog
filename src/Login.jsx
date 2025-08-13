@@ -16,9 +16,9 @@ const Login = () => {
       alignItems: 'center', 
       height: '100vh', 
       width: '100vw',
-      backgroundColor: '#f0f2f5' 
+      backgroundColor: '#fee4f1ff' 
     }}>
-      <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+      <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
         <Form
           name="login"
           style={{ width: 300 }}
@@ -30,16 +30,16 @@ const Login = () => {
             <img 
               src="/Logo Long White.png" 
               alt="Welcome" 
-              style={{ width: '150px', height: '150px', objectFit: 'contain' }} 
+              style={{ width: '150px', height: '70px', objectFit: 'contain' }} 
             />
           </div>
 
-          <h2 style={{ textAlign: 'center', marginBottom: '8px' }}>Selamat Datang di Byusoul Online!</h2>
-          <p style={{ textAlign: 'center', marginBottom: '24px' }}>Isi nama dan nomor kamu untuk memperlancar pesanan ya, Byuties!</p>
+          <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Selamat datang di Byusoul Online!</h2>
+          <p style={{ textAlign: 'left', marginBottom: '20px' }}> Silakan isi data berikut untuk melanjutkan order ya Byuties!</p>
 
           <Form.Item label="Nama Kamu" name="namaKamu" rules={[
             { required: true, message: 'Please input your name!' },
-            { min: 2, message: 'Nama terlalu pendek' }
+            { min: 3, message: 'Nama terlalu pendek' }
           ]}>
             <Input />
           </Form.Item>
@@ -51,8 +51,9 @@ const Login = () => {
               { min: 10, message: 'Nomor handphone tidak valid' }
             ]}
           >
-            <Input 
-              type="tel" 
+            <Input
+              type="tel"
+              maxLength={12}
               pattern="[0-9]*"
               onKeyPress={(e) => {
                 if (!/[0-9]/.test(e.key)) {
@@ -63,7 +64,7 @@ const Login = () => {
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
-              Submit
+              Lihat Produk
             </Button>
           </Form.Item>
         </Form>
