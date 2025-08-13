@@ -207,10 +207,16 @@ export default function PriceListPage({withCart=false}) {
                   Halo, <strong>{namaKamu}</strong>!
                 </h2>
                 <p>
-                  Nomor Kontak: {nomorHandphone}<br />
-                  <a href="/login" style={{ color: "#1890ff", textDecoration: "underline", cursor: "pointer", fontSize: "12px" }}>
+                  Nomor Kontak: {nomorHandphone}
+                  {/* 
+                  <a
+                    onClick={() => navigate("/", { state: { showLoginPopup: true } })}
+                    style={{ color: "#1890ff", textDecoration: "underline", cursor: "pointer", fontSize: "12px" }}
+                  >
                     Ubah Data
                   </a>
+                  */}
+                  <br />
                 </p>
               </div>
             </div>
@@ -313,7 +319,7 @@ export default function PriceListPage({withCart=false}) {
           </div>
         )}
       </MobileScrollable>
-      <div style={{ position: "fixed", bottom: "16px", right: "16px" }}>
+      <div style={{ marginTop: 32, textAlign: "right", marginRight: 16 }}>
         <Button type="default" onClick={() => navigate("/")} style={{ backgroundColor: "#fff" }}>
           Kembali ke Halaman Utama
         </Button>
