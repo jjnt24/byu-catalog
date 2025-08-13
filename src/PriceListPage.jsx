@@ -81,7 +81,11 @@ export default function PriceListPage({withCart=false}) {
       key: "Harga Promo",
       width: "20%",
       sorter: (a, b) => a["Harga Promo"] - b["Harga Promo"],
-      render: (item) => item ? item.toLocaleString() : "",
+      render: (item) => (
+        <div style={{ backgroundColor: item ? "yellow" : "transparent", padding: "4px 8px" }}>
+          {item ? item.toLocaleString() : ""}
+        </div>
+      ),
     },
 
     ...(true ? [{
@@ -95,10 +99,9 @@ export default function PriceListPage({withCart=false}) {
               type="number"
               min={1}
               value={inCart.qty}
-      onChange={(e) => updateQty(record.key, Number(e.target.value))}
+              onChange={(e) => updateQty(record.key, Number(e.target.value))}
               style={{ width: 70 }}
             />
-            {/* <Button onClick={() => removeFromCart(record.key)} danger>x</Button> */}
             <Button
               danger
               type="text"
@@ -107,7 +110,7 @@ export default function PriceListPage({withCart=false}) {
             />
           </Space>
         ) : (
-          <Button onClick={() => addToCart(record)}>Tambahkan</Button>
+          <Button size="small" onClick={() => addToCart(record)}>+</Button>
         );
       },
     }] : []),
@@ -142,7 +145,8 @@ export default function PriceListPage({withCart=false}) {
         3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
       </p>
   
-      <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100 }}>
+        <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ marginBottom: 8, marginRight: 16, width: "100%", maxWidth: 250, flex: 1 }}>
           <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
           <Select
@@ -178,7 +182,8 @@ export default function PriceListPage({withCart=false}) {
             Lihat Keranjang
           </Button>
         </div>
-      </Flex>
+        </Flex>
+      </div>
       {!loading && searchText ? (
         <div style={{ width: "100%", margin: "0 auto" }}>
           <Table
@@ -191,12 +196,28 @@ export default function PriceListPage({withCart=false}) {
               width: "100%",
               tableLayout: "auto",
             }}
+            components={{
+              header: {
+                cell: ({ children, ...props }) => (
+                  <th {...props} style={{ padding: "4px 8px" }}>
+                    {children}
+                  </th>
+                ),
+              },
+              body: {
+                cell: ({ children, ...props }) => (
+                  <td {...props} style={{ padding: "4px 8px" }}>
+                    {children}
+                  </td>
+                ),
+              },
+            }}
           />
         </div>
       ) : searchText ? (
         <p>Loading data...</p>
       ) : (
-        <div style={{ backgroundColor: "rgba(0,0,0,0.05)", padding: 40, borderRadius: 8, textAlign: "center", color: "#555", minWidth: "100%" }}>
+        <div style={{ backgroundColor: "rgba(0,0,0,0.05)", padding: 40, borderRadius: 8, textAlign: "center", color: "#555", minWidth: "100%", marginTop: 16 }}>
           Ketik produk yang ingin kamu cari...
         </div>
       )}
