@@ -131,105 +131,107 @@ export default function PriceListPage({withCart=false}) {
   ]
 
   return (
-    <MobileScrollable style={{ padding: 20, maxHeight: "90vh" }}>
-      {namaKamu && (
-        <div style={{ backgroundColor: "#fee4f1ff", padding: "4px 12px", marginBottom: "16px", borderRadius: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ textAlign: "left" }}>
-              <h2>
-                Halo, <strong>{namaKamu}</strong>!
-              </h2>
-              <p>
-                Nomor Kontak: {nomorHandphone}
-              </p>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", color: "#000" }}>
+      <MobileScrollable style={{ padding: 16 }}>
+        {namaKamu && (
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "4px 12px", marginBottom: "16px", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div style={{ textAlign: "left" }}>
+                <h2>
+                  Halo, <strong>{namaKamu}</strong>!
+                </h2>
+                <p>
+                  Nomor Kontak: {nomorHandphone}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <p style={{ fontStyle: "italic" }}>
-        <strong>Selamat Datang di Byusoul Online Order!</strong><br />
-        1. Cari produk dan klik "Tambahkan"<br />
-        2. Klik “Lihat Keranjang”<br />
-        3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
-      </p>
-  
-      <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
-        <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
-        <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
-          <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
-          <Select
-            placeholder="Filter Brand disini..."
-            value={selectedBrand}
-            onChange={(value) => setSelectedBrand(value)}
-            allowClear
-            style={{ width: "100%", fontSize: "16px" }}
-            dropdownStyle={{ fontSize: "16px", maxHeight: "250px" }}
-          >
-            {brandOptions.map((brand) => (
-              <Select.Option key={brand} value={brand}>
-                {brand}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
-        <div style={{ marginBottom: 8, flex: 2, minWidth: 150, marginRight: 16 }}>
-          <div style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</div>
-          <Input.Search
-            placeholder="Search..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: "100%", fontSize: "16px" }}
-            allowClear
-          />
-        </div>
-        <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end", minWidth: 100 }}>
-          <Button 
-            size="small"
-            onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
-            style={{ border: "1px solid #1890ff", color: "#1890ff", width: 120, backgroundColor: "transparent", height: "40px", padding: 0 }}
-          >
-            Cek Keranjang
-          </Button>
-        </div>
-        </Flex>
-      </MobileScrollable>
-      {!loading && (searchText || selectedBrand) ? (
-        <MobileScrollable style={{ width: "100%", margin: "0 auto" }}>
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            rowKey={(record, index) => index}
-            pagination={{ pageSize: 5 }}
-            bordered
-            style={{
-              width: "100%",
-              tableLayout: "auto",
-            }}
-            components={{
-              header: {
-                cell: ({ children, ...props }) => (
-                  <th {...props} style={{ padding: "4px 8px" }}>
-                    {children}
-                  </th>
-                ),
-              },
-              body: {
-                cell: ({ children, ...props }) => (
-                  <td {...props} style={{ padding: "4px 8px" }}>
-                    {children}
-                  </td>
-                ),
-              },
-            }}
-          />
+        )}
+        <p style={{ fontStyle: "italic" }}>
+          <strong>Selamat Datang di Byusoul Online Order!</strong><br />
+          1. Cari produk dan klik "Tambahkan"<br />
+          2. Klik “Lihat Keranjang”<br />
+          3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
+        </p>
+    
+        <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
+          <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
+          <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
+            <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
+            <Select
+              placeholder="Filter Brand disini..."
+              value={selectedBrand}
+              onChange={(value) => setSelectedBrand(value)}
+              allowClear
+              style={{ width: "100%", fontSize: "16px" }}
+              dropdownStyle={{ fontSize: "16px", maxHeight: "250px" }}
+            >
+              {brandOptions.map((brand) => (
+                <Select.Option key={brand} value={brand}>
+                  {brand}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+          <div style={{ marginBottom: 8, flex: 2, minWidth: 150, marginRight: 16 }}>
+            <div style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</div>
+            <Input.Search
+              placeholder="Search..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: "100%", fontSize: "16px" }}
+              allowClear
+            />
+          </div>
+          <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end", minWidth: 100 }}>
+            <Button 
+              size="small"
+              onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
+              style={{ border: "1px solid #1890ff", color: "#1890ff", width: 120, backgroundColor: "transparent", height: "40px", padding: 0 }}
+            >
+              Cek Keranjang
+            </Button>
+          </div>
+          </Flex>
         </MobileScrollable>
-      ) : searchText ? (
-        <p>Loading data...</p>
-      ) : (
-        <div style={{ backgroundColor: "rgba(0,0,0,0.05)", padding: 40, borderRadius: 8, textAlign: "center", color: "#555", minWidth: "100%", marginTop: 16 }}>
-          Ketik produk yang ingin kamu cari...
-        </div>
-      )}
-    </MobileScrollable>
+        {!loading && (searchText || selectedBrand) ? (
+          <MobileScrollable style={{ width: "100%", margin: "0 auto" }}>
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              rowKey={(record, index) => index}
+              pagination={{ pageSize: 5 }}
+              bordered
+              style={{
+                width: "100%",
+                tableLayout: "auto",
+              }}
+              components={{
+                header: {
+                  cell: ({ children, ...props }) => (
+                    <th {...props} style={{ padding: "4px 8px" }}>
+                      {children}
+                    </th>
+                  ),
+                },
+                body: {
+                  cell: ({ children, ...props }) => (
+                    <td {...props} style={{ padding: "4px 8px" }}>
+                      {children}
+                    </td>
+                  ),
+                },
+              }}
+            />
+          </MobileScrollable>
+        ) : searchText ? (
+          <p>Loading data...</p>
+        ) : (
+          <div style={{ backgroundColor: "rgba(0,0,0,0.05)", padding: 40, borderRadius: 8, textAlign: "center", color: "#555", minWidth: "100%", marginTop: 16 }}>
+            Ketik produk yang ingin kamu cari...
+          </div>
+        )}
+      </MobileScrollable>
+    </div>
   );
 }
