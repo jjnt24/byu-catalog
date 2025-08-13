@@ -65,8 +65,9 @@ export default function PriceListPage({withCart=false}) {
       title:"Nama Produk",
       dataIndex:"Nama Produk",
       key:"Nama Produk",
-      width: "40%",
       sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
+      onHeaderCell: () => ({ style: { minWidth: 150 } }),
+      onCell: () => ({ style: { minWidth: 150 } }),
     },
     {
       title:"Harga Byu",
@@ -91,6 +92,7 @@ export default function PriceListPage({withCart=false}) {
     ...(true ? [{
       title: "",
       key: "action",
+      width: 80,
       render: (_, record) => {
         const inCart = cart.find((c) => c.key === record.key);
         return inCart ? (
@@ -98,6 +100,7 @@ export default function PriceListPage({withCart=false}) {
             <Input
               type="number"
               min={1}
+              max={9}
               value={inCart.qty}
               onChange={(e) => updateQty(record.key, Number(e.target.value))}
               style={{ width: 70 }}
@@ -125,7 +128,7 @@ export default function PriceListPage({withCart=false}) {
       }}
     >
       {namaKamu && (
-        <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
+        <div style={{ backgroundColor: "#fee4f1ff", padding: "4px 12px", marginBottom: "16px", borderRadius: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{ textAlign: "left" }}>
               <h2>
@@ -146,8 +149,8 @@ export default function PriceListPage({withCart=false}) {
       </p>
   
       <div style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100 }}>
-        <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ marginBottom: 8, marginRight: 16, width: "100%", maxWidth: 250, flex: 1 }}>
+        <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "nowrap" }}>
+        <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
           <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
           <Select
             placeholder="Filter Brand disini..."
@@ -164,7 +167,7 @@ export default function PriceListPage({withCart=false}) {
             ))}
           </Select>
         </div>
-        <div style={{ marginBottom: 8, width: "100%", maxWidth: 400, flex: 2 }}>
+        <div style={{ marginBottom: 8, flex: 2, minWidth: 150, marginRight: 16 }}>
           <div style={{ fontWeight: "bold", marginBottom: 4 }}>Cari produk</div>
           <Input.Search
             placeholder="Search..."
@@ -174,12 +177,13 @@ export default function PriceListPage({withCart=false}) {
             allowClear
           />
         </div>
-        <div style={{ marginBottom: 8, width: "100%", maxWidth: 250, display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end", minWidth: 100 }}>
           <Button 
+            size="small"
             onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })} 
-            style={{ backgroundColor: "#1890ff", color: "#fff", border: "none", width: 200 }}
+            style={{ border: "1px solid #1890ff", color: "#1890ff", width: 120, backgroundColor: "transparent", height: "40px", padding: 0 }}
           >
-            Lihat Keranjang
+            Cek Keranjang
           </Button>
         </div>
         </Flex>

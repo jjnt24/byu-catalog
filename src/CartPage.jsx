@@ -102,6 +102,7 @@ export default function CartPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
             <h2>Keranjang</h2>
             <Space>
+                <Button danger onClick={() => setCart([])}>Hapus Keranjang</Button>
                 <Button onClick={() => navigate("/catalog", { state: { namaKamu, nomorHandphone } })}>Kembali ke Price List</Button>
             </Space>
         </div>
