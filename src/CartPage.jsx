@@ -33,6 +33,14 @@ export default function CartPage() {
         sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
     },
     {
+      title: "Harga Promo",
+      dataIndex: "Harga Promo",
+      key: "Harga Promo",
+      width: 150,
+      render: (item) => item?.toLocaleString(),
+      sorter: (a, b) => a["Harga Promo"] - b["Harga Promo"],
+    },
+    {
       title: "Quantity",
       key: "qty",
       render: (_, record) => (
@@ -43,11 +51,7 @@ export default function CartPage() {
         />
       ),
     },
-    {
-      title: "Total",
-      key: "total",
-      render: (_, record) => Number(record.qty * record["Harga Byusoul"]).toLocaleString(),
-    },
+    
     {
       title: "Action",
       key: "action",
@@ -68,13 +72,34 @@ export default function CartPage() {
         }}
     >
         <Flex justify="space-between" align="center">
-            <h2>Cart</h2>
+            <h2>Keranjang</h2>
+            <p style={{ fontStyle: "italic" }}>
+              Screenshot list ini ke WhatsApp <strong>0851-9007-7091</strong> untuk checkout ya, Byuties
+            </p>
             <Space>
-                <Button onClick={() => setCart([])} danger>Clear Cart</Button>
-                <Button onClick={() => navigate("/")}>Back to Price List</Button>
+                <Button onClick={() => setCart([])} danger>Hapus Keranjang</Button>
+                <Button onClick={() => navigate("/")}>Kembali ke Price List</Button>
             </Space>
         </Flex>
         <Table columns={columns} dataSource={cart} rowKey="key" />
+        <div style={{
+            textAlign: "left",
+            marginTop: 16,
+            border: "1px solid #ccc",
+            padding: "12px",
+            borderRadius: "6px",
+            backgroundColor: "#f9f9f9"
+          }}>
+          <p>
+            <strong>Metode pengiriman:</strong><br />
+            - Online delivery (Gojek/Grab/Maxim)<br />
+            - Pick up store: Byusoul Taman Siswa (
+            <a href="https://maps.app.goo.gl/thFLGFGjtMXLjDsf7" target="_blank" rel="noopener noreferrer">Gmaps</a>
+            )<br />
+            - Kirim jarak jauh (JNE, J&amp;T, dll.)<br />
+            - FREE ONGKIR same day (minimal Rp 50k) untuk pengiriman dalam Ring Road Jogja
+          </p>
+        </div>
     </div>
   )
 }
