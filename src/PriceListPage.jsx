@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Table, Input, Button, Space, Flex, Select } from "antd";
 import * as XLSX from "xlsx";
 import { CartContext } from "./CartContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { DeleteOutlined } from "@ant-design/icons";
 
 export default function PriceListPage({withCart=false}) {
@@ -11,6 +11,8 @@ export default function PriceListPage({withCart=false}) {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const { cart, addToCart, updateQty, removeFromCart } = useContext(CartContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { namaKamu, nomorHandphone } = location.state || {};
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -125,21 +127,36 @@ export default function PriceListPage({withCart=false}) {
         overflowY: "auto", // scroll kalau konten melebihi tinggi 
       }}
     >
-      <h2>Price List Byusoul</h2>
+      {namaKamu && (
+        <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <img src="/Kucing Happy.png" alt="Kucing Happy" style={{ width: 120, height: 120, objectFit: "contain" }} />
+            <div style={{ textAlign: "left" }}>
+              <h2>
+                Halo, <strong>{namaKamu}</strong>!
+              </h2>
+              <p>
+                Nomor Kontak: {nomorHandphone}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <p style={{ fontStyle: "italic" }}>
-        Selamat Datang di Byusoul Online Order!<br />
+        <strong>Selamat Datang di Byusoul Online Order!</strong><br />
         1. Cari produk dan klik "Tambahkan"<br />
         2. Klik “Lihat Keranjang”<br />
-        3. Screenshot keranjang ke WA Byusoul untuk proses checkout
+        3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
       </p>
   
       <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
         <Select
-          placeholder="Filter Brand"
+          placeholder="Filter Brand disini..."
           value={selectedBrand}
           onChange={(value) => setSelectedBrand(value)}
           allowClear
-          style={{ width: 200 }}
+          style={{ width: 200, fontSize: "16px" }}
+          dropdownStyle={{ fontSize: "16px" }}
         >
           {brandOptions.map((brand) => (
             <Select.Option key={brand} value={brand}>
@@ -151,10 +168,10 @@ export default function PriceListPage({withCart=false}) {
           placeholder="Search..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          style={{ maxWidth: 300 }}
+          style={{ maxWidth: 300, fontSize: "16px" }}
           allowClear
         />
-        <Button onClick={() => navigate("/cart")}>Lihat Keranjang</Button>
+        <Button onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })}>Lihat Keranjang</Button>
       </Flex>
       <Table
         columns={columns}

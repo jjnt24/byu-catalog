@@ -4,6 +4,7 @@ import PriceListPage from "./PriceListPage";
 import { CartProvider } from "./CartContext";
 import { Button, Space } from "antd";
 import CartPage from "./CartPage";
+import Login from "./Login";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
         </nav> */}
 
         <Routes>
-          <Route path="/" element={<PriceListPage />} />
+          <Route path="/" element={<Login />} />
           <Route path="/catalog" element={<PriceListPage withCart={true} />} />
           <Route path="/cart" element={<CartPage />} />
         </Routes>

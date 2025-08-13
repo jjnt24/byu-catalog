@@ -1,11 +1,15 @@
-import { Table, InputNumber, Button, Space, Flex } from "antd";
-import { useContext } from "react";
+import { Table, InputNumber, Button, Space, Flex, Radio, Modal } from "antd";
+import { useContext, useState } from "react";
 import { CartContext } from "./CartContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function CartPage() {
+  const [showPopup, setShowPopup] = useState(false);
   const { cart, updateQty, removeFromCart, setCart } = useContext(CartContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const storedData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const { namaKamu, nomorHandphone } = location.state || storedData;
 
   const columns = [
     
@@ -63,6 +67,16 @@ export default function CartPage() {
     },
   ];
 
+  const total = cart.reduce((sum, item) => {
+    const parsePrice = (val) => {
+      if (!val) return 0;
+      return Number(String(val).replace(/[^\d]/g, "")) || 0;
+    };
+    const price = parsePrice(item["Harga Promo"]) || parsePrice(item["Harga Byusoul"]);
+    const qty = Number(item.qty) || 0;
+    return sum + price * qty;
+  }, 0);
+
   return (
     <div 
         style={{ 
@@ -71,17 +85,60 @@ export default function CartPage() {
             overflowY: "auto", // scroll kalau konten melebihi tinggi 
         }}
     >
-        <Flex justify="space-between" align="center">
+        {namaKamu && (
+          <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <img src="/Kucing Happy.png" alt="Kucing Happy" style={{ width: 120, height: 120, objectFit: "contain" }} />
+              <div style={{ textAlign: "left" }}>
+                <h2>Halo, <strong>{namaKamu}</strong>!</h2>
+                <p>Nomor Kontak: {nomorHandphone}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
             <h2>Keranjang</h2>
-            <p style={{ fontStyle: "italic" }}>
-              Screenshot list ini ke WhatsApp <strong>0851-9007-7091</strong> untuk checkout ya, Byuties
-            </p>
             <Space>
-                <Button onClick={() => setCart([])} danger>Hapus Keranjang</Button>
-                <Button onClick={() => navigate("/")}>Kembali ke Price List</Button>
+                <Button onClick={() => navigate("/catalog", { state: { namaKamu, nomorHandphone } })}>Kembali ke Price List</Button>
             </Space>
-        </Flex>
-        <Table columns={columns} dataSource={cart} rowKey="key" />
+        </div>
+        <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+          <Table columns={columns} dataSource={cart} rowKey="key" pagination={false} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 16, gap: 16 }}>
+          <div style={{ fontWeight: "bold" }}>
+            Total: Rp {total.toLocaleString()}
+          </div>
+          <Button
+            type="primary"
+            size="large"
+            onClick={async () => {
+              const selectedShipping = document.querySelector('input[name="radio-group"]:checked')?.nextSibling?.textContent || '';
+              let orderText = `*Hai Minsoul, aku mau pesan barang ini ya. Boleh tolong di cek?*\n\n`;
+              orderText += `Nama: ${namaKamu}\nNomor HP: ${nomorHandphone}\nPesanan:\n`;
+              cart.forEach((item, idx) => {
+                const normalPrice = item["Harga Byusoul"];
+                const promoPrice = item["Harga Promo"];
+                let line = `${idx + 1}. ${item["Nama Produk"]}`;
+                if (promoPrice) {
+                  line += ` - HARGA PROMO: ${promoPrice}`;
+                } else {
+                  line += ` - Harga: ${normalPrice}`;
+                }
+                line += ` - Qty: ${item.qty}\n`;
+                orderText += line;
+              });
+              orderText += `\nTotal: Rp ${total.toLocaleString()}\nMetode Pengiriman: ${selectedShipping}`;
+              navigator.clipboard.writeText(orderText);
+              setShowPopup(true);
+              setTimeout(() => {
+                window.open(`https://wa.me/6285190077091?text=${encodeURIComponent(orderText)}`, "_blank");
+              }, 4000);
+            }}
+          >
+            Konfirmasi Pesanan
+          </Button>
+        </div>
         <div style={{
             textAlign: "left",
             marginTop: 16,
@@ -90,16 +147,44 @@ export default function CartPage() {
             borderRadius: "6px",
             backgroundColor: "#f9f9f9"
           }}>
-          <p>
-            <strong>Metode pengiriman:</strong><br />
-            - Online delivery (Gojek/Grab/Maxim)<br />
-            - Pick up store: Byusoul Taman Siswa (
-            <a href="https://maps.app.goo.gl/thFLGFGjtMXLjDsf7" target="_blank" rel="noopener noreferrer">Gmaps</a>
-            )<br />
-            - Kirim jarak jauh (JNE, J&amp;T, dll.)<br />
-            - FREE ONGKIR same day (minimal Rp 50k) untuk pengiriman dalam Ring Road Jogja
-          </p>
+          <div>
+            <strong>Metode pengiriman:</strong>
+            <Radio.Group defaultValue="Online delivery" style={{ display: "flex", flexDirection: "column", marginTop: 8, fontSize: "16px", lineHeight: "1.8" }}>
+              <Radio value="Online delivery">Online delivery (Gojek/Grab/Maxim)</Radio>
+              <Radio value="Pick up store">Pick up store: Byusoul Taman Siswa (<a href="https://maps.app.goo.gl/thFLGFGjtMXLjDsf7" target="_blank" rel="noopener noreferrer">Gmaps</a>)</Radio>
+              <Radio value="Long distance">Kirim jarak jauh (JNE, J&amp;T, dll.)</Radio>
+              <Radio value="Free same day">FREE ONGKIR same day (minimal Rp 50k) untuk pengiriman dalam Ring Road Jogja</Radio>
+              <Radio value="Other">Lainnya</Radio>
+            </Radio.Group>
+          </div>
         </div>
+        {showPopup && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: "white",
+              padding: 32,
+              borderRadius: 12,
+              textAlign: "center",
+              maxWidth: "90%",
+            }}>
+              <img src="/Logo Long White.png" style={{ width: 150, height: 150, objectFit: "contain", marginBottom: 16 }} />
+              <p style={{ fontSize: "20px", fontWeight: "bold" }}>Order kamu sudah di catat ya, Byuties!</p>
+              <p>Kamu akan diarahkan ke WA Byusoul dalam 3 detik.</p>
+              <Button type="primary" style={{ marginTop: 16 }} onClick={() => setShowPopup(false)}>Saya Mengerti</Button>
+            </div>
+          </div>
+        )}
     </div>
   )
 }
