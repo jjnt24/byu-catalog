@@ -70,81 +70,76 @@ export default function PriceListPage({withCart=false}) {
 
   const columns = [
     {
-      title:"Brand",
-      dataIndex:"Brand",
-      key:"Brand",
-      width: "20%",
-      sorter: (a, b) => a["Brand"]?.localeCompare(b["Brand"]),
-    },
-    {
       title:"Nama Produk",
       dataIndex:"Nama Produk",
       key:"Nama Produk",
+      width: "30%",
       sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
       onHeaderCell: () => ({ style: { minWidth: 150 } }),
       onCell: () => ({ style: { minWidth: 150 } }),
+      render: (_, record) => (
+        <div>
+          <div style={{ fontWeight: "bold" }}>{record.Brand}</div>
+          <div>{record["Nama Produk"]}</div>
+        </div>
+      ),
     },
     {
       title:"Harga Byu",
       dataIndex:"Harga Byusoul",
       key:"Harga Byusoul",
-      width: "20%",
+      width: "6%",
       sorter: (a, b) => a["Harga Byusoul"] - b["Harga Byusoul"],
       render: (_, record) => {
-        const inCart = cart.find((c) => c.key === record.key);
+        const hasPromo = Boolean(record["Harga Promo"]);
         return (
           <div>
-            <div style={{ textDecoration: record["Harga Promo"] ? "line-through" : "none" }}>
+            <div style={{ textDecoration: hasPromo ? "line-through" : "none", textDecorationColor: "rgba(0,0,0,0.3)", textDecorationThickness: "1px" }}>
               {record["Harga Byusoul"]?.toLocaleString()}
             </div>
             {record["Harga Promo"] && (
-              <div style={{ backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
-                {record["Harga Promo"]?.toLocaleString()}
+              <div style={{ color: "red", backgroundColor: "yellow", display: "inline-block", padding: "2px 4px", marginTop: 2 }}>
+                {String(record["Harga Promo"]).replace(/Rp\s?/g, "").replace(/\./g, "")}
               </div>
             )}
             <div style={{ marginTop: 8 }}>
-              {inCart ? (
-                <Space>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={9}
-                    value={inCart.qty}
-                    onChange={(e) => updateQty(record.key, Number(e.target.value))}
-                    style={{ width: 70 }}
-                  />
-                  <Button
-                    danger
-                    type="text"
-                    icon={<DeleteOutlined />}
-                    onClick={() => removeFromCart(record.key)}
-                  />
-                </Space>
-              ) : (
-                <Button size="small" onClick={() => {
+              <Button
+                size="small"
+                onClick={() => {
                   addToCart(record);
-                  // create flying animation element
-                  const flying = document.createElement('div');
-                  flying.innerText = '+';
-                  flying.style.position = 'absolute';
+                  // Create flying "+" animation
+                  const flying = document.createElement("div");
+                  flying.innerText = "+";
+                  flying.style.position = "absolute";
                   flying.style.left = `${window.innerWidth / 2}px`;
                   flying.style.top = `${window.innerHeight / 2}px`;
-                  flying.style.fontSize = '16px';
-                  flying.style.transition = 'all 0.8s ease-in-out';
+                  flying.style.fontSize = "16px";
+                  flying.style.fontWeight = "bold";
+                  flying.style.color = "#1890ff";
+                  flying.style.transition = "all 0.8s ease-in-out";
+                  flying.style.pointerEvents = "none";
                   document.body.appendChild(flying);
-                  const cartBtn = document.querySelector('#cart-button');
-                  const rect = cartBtn.getBoundingClientRect();
-                  requestAnimationFrame(() => {
-                    flying.style.left = `${rect.left + rect.width/2}px`;
-                    flying.style.top = `${rect.top + rect.height/2}px`;
-                    flying.style.opacity = 0;
-                    flying.style.transform = 'scale(0.2)';
-                  });
-                  setTimeout(() => {
-                    document.body.removeChild(flying);
-                  }, 800);
-                }}>+</Button>
-              )}
+
+                  const cartBtn = document.querySelector("#cart-button");
+                  if (cartBtn) {
+                    const rect = cartBtn.getBoundingClientRect();
+                    requestAnimationFrame(() => {
+                      flying.style.left = `${rect.left + rect.width / 2}px`;
+                      flying.style.top = `${rect.top + rect.height / 2}px`;
+                      flying.style.opacity = 0;
+                      flying.style.transform = "scale(0.2)";
+                    });
+                    setTimeout(() => {
+                      document.body.removeChild(flying);
+                    }, 800);
+                  } else {
+                    // fallback remove if cart button not found
+                    setTimeout(() => document.body.removeChild(flying), 800);
+                  }
+                }}
+              >
+                +
+              </Button>
             </div>
           </div>
         );

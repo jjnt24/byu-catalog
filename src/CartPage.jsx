@@ -13,20 +13,18 @@ export default function CartPage() {
   const { namaKamu, nomorHandphone } = location.state || storedData;
 
   const columns = [
-    
     {
-        "title":"Brand",
-        "dataIndex":"Brand",
-        "key":"Brand",
-        "width": 150, // fixed width
-        sorter: (a, b) => a["Brand"]?.localeCompare(b["Brand"]),
-    },
-    {
-        "title":"Nama Produk",
-        "dataIndex":"Nama Produk",
-        "key":"Nama Produk",
-        "width": 500, // fixed width
-        sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
+      title: "Nama Produk",
+      dataIndex: "Nama Produk",
+      key: "Nama Produk",
+      width: 500, // adjust as needed
+      sorter: (a, b) => a["Nama Produk"]?.localeCompare(b["Nama Produk"]),
+      render: (_, record) => (
+        <div>
+          <div style={{ fontWeight: "bold" }}>{record.Brand}</div>
+          <div>{record["Nama Produk"]}</div>
+        </div>
+      ),
     },
 
     {
