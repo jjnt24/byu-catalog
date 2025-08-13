@@ -5,6 +5,7 @@ import { useDebounce } from "use-debounce";
 import { CartContext } from "./CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DeleteOutlined } from "@ant-design/icons";
+import MobileScrollable from "./MobileScrollable";
 
 export default function PriceListPage({withCart=false}) {
   const [data, setData] = useState([]);
@@ -38,6 +39,20 @@ export default function PriceListPage({withCart=false}) {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    // Fix iOS touch scroll inside Select dropdown
+    const handleTouchMove = (e) => {
+      e.stopPropagation();
+    };
+    const dropdown = document.querySelector('.ant-select-dropdown');
+    if (dropdown) {
+      dropdown.addEventListener('touchmove', handleTouchMove, { passive: false });
+      return () => {
+        dropdown.removeEventListener('touchmove', handleTouchMove);
+      };
+    }
+  }, [selectedBrand]);
 
   const brandOptions = Array.from(new Set(data.map(item => item.Brand))).filter(Boolean);
 
@@ -120,13 +135,7 @@ export default function PriceListPage({withCart=false}) {
   ]
 
   return (
-    <div 
-      style={{ 
-        padding: 20,
-        maxHeight: "90vh", // batas tinggi, biar ga kepenuhan layar
-        overflowY: "auto", // scroll kalau konten melebihi tinggi 
-      }}
-    >
+    <MobileScrollable style={{ padding: 20, maxHeight: "90vh" }}>
       {namaKamu && (
         <div style={{ backgroundColor: "#fee4f1ff", padding: "4px 12px", marginBottom: "16px", borderRadius: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -148,8 +157,8 @@ export default function PriceListPage({withCart=false}) {
         3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
       </p>
   
-      <div style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100 }}>
-        <Flex justify="space-between" align="flex-end" style={{ marginBottom: 16, flexWrap: "nowrap" }}>
+      <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
+        <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
         <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
           <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
           <Select
@@ -158,7 +167,7 @@ export default function PriceListPage({withCart=false}) {
             onChange={(value) => setSelectedBrand(value)}
             allowClear
             style={{ width: "100%", fontSize: "16px" }}
-            dropdownStyle={{ fontSize: "16px" }}
+            dropdownStyle={{ fontSize: "16px", maxHeight: "250px" }}
           >
             {brandOptions.map((brand) => (
               <Select.Option key={brand} value={brand}>
@@ -187,9 +196,9 @@ export default function PriceListPage({withCart=false}) {
           </Button>
         </div>
         </Flex>
-      </div>
+      </MobileScrollable>
       {!loading && (searchText || selectedBrand) ? (
-        <div style={{ width: "100%", margin: "0 auto" }}>
+        <MobileScrollable style={{ width: "100%", margin: "0 auto" }}>
           <Table
             columns={columns}
             dataSource={filteredData}
@@ -217,7 +226,7 @@ export default function PriceListPage({withCart=false}) {
               },
             }}
           />
-        </div>
+        </MobileScrollable>
       ) : searchText ? (
         <p>Loading data...</p>
       ) : (
@@ -225,6 +234,6 @@ export default function PriceListPage({withCart=false}) {
           Ketik produk yang ingin kamu cari...
         </div>
       )}
-    </div>
+    </MobileScrollable>
   );
 }
