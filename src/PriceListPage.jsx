@@ -130,7 +130,6 @@ export default function PriceListPage({withCart=false}) {
       {namaKamu && (
         <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <img src="/Kucing Happy.png" alt="Kucing Happy" style={{ width: 120, height: 120, objectFit: "contain" }} />
             <div style={{ textAlign: "left" }}>
               <h2>
                 Halo, <strong>{namaKamu}</strong>!
@@ -149,29 +148,35 @@ export default function PriceListPage({withCart=false}) {
         3. Cek pesanan kamu dan klik "Konfirmasi Pesanan"
       </p>
   
-      <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
-        <Select
-          placeholder="Filter Brand disini..."
-          value={selectedBrand}
-          onChange={(value) => setSelectedBrand(value)}
-          allowClear
-          style={{ width: 200, fontSize: "16px" }}
-          dropdownStyle={{ fontSize: "16px" }}
-        >
-          {brandOptions.map((brand) => (
-            <Select.Option key={brand} value={brand}>
-              {brand}
-            </Select.Option>
-          ))}
-        </Select>
-        <Input.Search
-          placeholder="Search..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ maxWidth: 300, fontSize: "16px" }}
-          allowClear
-        />
-        <Button onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })}>Lihat Keranjang</Button>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ marginBottom: 8, width: "100%", maxWidth: 200 }}>
+          <Select
+            placeholder="Filter Brand disini..."
+            value={selectedBrand}
+            onChange={(value) => setSelectedBrand(value)}
+            allowClear
+            style={{ width: "100%", fontSize: "16px" }}
+            dropdownStyle={{ fontSize: "16px" }}
+          >
+            {brandOptions.map((brand) => (
+              <Select.Option key={brand} value={brand}>
+                {brand}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+        <div style={{ marginBottom: 8, width: "100%", maxWidth: 300 }}>
+          <Input.Search
+            placeholder="Search..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: "100%", fontSize: "16px" }}
+            allowClear
+          />
+        </div>
+        <div style={{ marginBottom: 8, width: "100%", maxWidth: 200 }}>
+          <Button onClick={() => navigate("/cart", { state: { namaKamu, nomorHandphone } })}>Lihat Keranjang</Button>
+        </div>
       </Flex>
       <Table
         columns={columns}

@@ -88,7 +88,6 @@ export default function CartPage() {
         {namaKamu && (
           <div style={{ backgroundColor: "#fee4f1ff", padding: "16px", marginBottom: "16px", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <img src="/Kucing Happy.png" alt="Kucing Happy" style={{ width: 120, height: 120, objectFit: "contain" }} />
               <div style={{ textAlign: "left" }}>
                 <h2>Halo, <strong>{namaKamu}</strong>!</h2>
                 <p>Nomor Kontak: {nomorHandphone}</p>
