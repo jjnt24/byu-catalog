@@ -23,8 +23,12 @@ export default function PriceListPage({withCart=false}) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowLauncherPopup(true);
-      setPopupOpacity(1);
+      // Only show popup if not shown before in this session
+      if (!sessionStorage.getItem("byusoulPopupShown")) {
+        setShowLauncherPopup(true);
+        setPopupOpacity(1);
+        sessionStorage.setItem("byusoulPopupShown", "true");
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -265,7 +269,10 @@ export default function PriceListPage({withCart=false}) {
             <div style={{ fontWeight: "bold", marginBottom: 4 }}>Brand</div>
             <select
               value={selectedBrand || ""}
-              onChange={(e) => setSelectedBrand(e.target.value || null)}
+              onChange={(e) => {
+                setSelectedBrand(e.target.value || null);
+                setSearchText("");
+              }}
               style={{ 
                 width: "100%", 
                 fontSize: "16px", 
