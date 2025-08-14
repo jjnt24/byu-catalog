@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { useDebounce } from "use-debounce";
 import { CartContext } from "./CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { DeleteOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { DeleteOutlined, ShoppingCartOutlined, TagsOutlined } from "@ant-design/icons";
 import MobileScrollable from "./MobileScrollable";
 
 export default function PriceListPage({withCart=false}) {
@@ -19,6 +19,7 @@ export default function PriceListPage({withCart=false}) {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [showLauncherPopup, setShowLauncherPopup] = useState(false);
   const [popupOpacity, setPopupOpacity] = useState(0);
+  const [promoOnly, setPromoOnly] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,16 +68,17 @@ export default function PriceListPage({withCart=false}) {
   const brandOptions = Array.from(new Set(data.map(item => item.Brand))).filter(Boolean);
 
   const filteredData = useMemo(() => {
-    if (!debouncedSearch && !selectedBrand) return [];
+    if (!debouncedSearch && !selectedBrand && !promoOnly) return [];
     return data.filter((item) => {
       const matchesBrand = selectedBrand ? item.Brand === selectedBrand : true;
-      if (!debouncedSearch) return matchesBrand;
+      const matchesPromo = promoOnly ? Boolean(item["Harga Promo"]) : true;
+      if (!debouncedSearch) return matchesBrand && matchesPromo;
       const target = `${item.Brand} ${item["Nama Produk"]}`.toLowerCase();
       const searchWords = debouncedSearch.toLowerCase().split(" ").filter(Boolean);
       const matchesSearch = searchWords.every((word) => target.includes(word));
-      return matchesSearch && matchesBrand;
+      return matchesSearch && matchesBrand && matchesPromo;
     });
-  }, [data, debouncedSearch, selectedBrand]);
+  }, [data, debouncedSearch, selectedBrand, promoOnly]);
 
   const columns = [
     {
@@ -231,6 +233,23 @@ export default function PriceListPage({withCart=false}) {
                 </p>
               </div>
             </div>
+            <Button
+              onClick={() => window.open("https://wa.me/6285190077091?text=Hai%20Minsoul%2C%20bisa%20bantu%20aku%20pilih%20produk%3F%20Aku%20sedang%20belanja%20di%20katalog%20online%20Byusoul%20nih.%20Terimakasih%20kak", "_blank")}
+              style={{
+                borderColor: "#52c41a",
+                color: "#52c41a",
+                backgroundColor: "#fff",
+                borderWidth: "1px",
+                fontWeight: "bold",
+                maxWidth: 200,
+                position: "absolute",
+                top: "50%",
+                right: "12px",
+                transform: "translateY(-50%)",
+              }}
+            >
+              Konsultasi lewat WA
+            </Button>
           </div>
         )}
         <p style={{ fontStyle: "normal" }}>
@@ -282,6 +301,42 @@ export default function PriceListPage({withCart=false}) {
             />
           </div>
           <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end", minWidth: 100 }}>
+            <Button
+              size="small"
+              onClick={() => setPromoOnly(!promoOnly)}
+              style={{
+                border: promoOnly ? "none" : "1px solid #52c41a",
+                color: "#52c41a",
+                backgroundColor: promoOnly ? "#52c41a" : "transparent",
+                width: 40,
+                height: 40,
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 16
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  lineHeight: 1,
+                }}
+              >
+                <TagsOutlined style={{ fontSize: 20, color: promoOnly ? "#fff" : "#52c41a" }} />
+                <span
+                  style={{
+                    fontSize: "8px",
+                    marginTop: "2px",
+                    color: promoOnly ? "#fff" : "#52c41a"
+                  }}
+                >
+                  PROMO
+                </span>
+              </div>
+            </Button>
             <Badge count={cart.reduce((acc, item) => acc + item.qty, 0)} size="small" style={{ marginRight: 8 }}>
               <Button 
                 id="cart-button"
@@ -295,7 +350,7 @@ export default function PriceListPage({withCart=false}) {
           </div>
           </Flex>
         </MobileScrollable>
-        {!loading && (searchText || selectedBrand) ? (
+        {!loading && (searchText || selectedBrand || promoOnly) ? (
           <MobileScrollable style={{ width: "100%", margin: "0 auto" }}>
             <Table
               columns={columns}
@@ -335,19 +390,6 @@ export default function PriceListPage({withCart=false}) {
         )}
       </MobileScrollable>
       <div style={{ marginTop: 32, marginRight: 16, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <Button
-          onClick={() => window.open("https://wa.me/6285190077091?text=Hai%20Minsoul%2C%20bisa%20bantu%20aku%20pilih%20produk%3F%20Aku%20sedang%20belanja%20di%20katalog%20online%20Byusoul%20nih.%20Terimakasih%20kak", "_blank")}
-          style={{
-            borderColor: "#52c41a",
-            color: "#52c41a",
-            backgroundColor: "#fff",
-            borderWidth: "1px",
-            fontWeight: "bold",
-            maxWidth: 200,
-          }}
-        >
-          Konsultasi lewat WA
-        </Button>
         <Button type="default" onClick={() => navigate("/")} style={{ backgroundColor: "#fff" }}>
           Kembali ke Halaman Utama
         </Button>
