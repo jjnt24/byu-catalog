@@ -17,7 +17,16 @@ export default function PriceListPage({withCart=false}) {
   const [debouncedSearch] = useDebounce(searchText, 300);
   const [loading, setLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [showLauncherPopup, setShowLauncherPopup] = useState(true);
+  const [showLauncherPopup, setShowLauncherPopup] = useState(false);
+  const [popupOpacity, setPopupOpacity] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLauncherPopup(true);
+      setPopupOpacity(1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     fetch("/data/priceList.xlsx")
@@ -163,6 +172,8 @@ export default function PriceListPage({withCart=false}) {
             justifyContent: "center",
             alignItems: "center",
             zIndex: 3000,
+            opacity: popupOpacity,
+            transition: "opacity 1.5s ease-in-out",
           }}
         >
           <div
@@ -223,8 +234,12 @@ export default function PriceListPage({withCart=false}) {
           </div>
         )}
         <p style={{ fontStyle: "normal" }}>
-          <strong>Produk Byusoul</strong><br /></p>
-          
+          <strong>Produk Byusoul</strong><br />
+          <span style={{ color: "red", fontWeight: "normal" }}>
+            Gratis ongkir untuk pengantaran same-day di dalam Ring Road Jogja
+          </span>
+        </p>
+        
         <MobileScrollable style={{ position: "sticky", top: 0, backgroundColor: "white", zIndex: 100, marginBottom: 16 }}>
           <Flex justify="space-between" align="flex-end" style={{ flexWrap: "nowrap" }}>
           <div style={{ marginBottom: 8, marginRight: 16, flex: 1, minWidth: 100 }}>
@@ -319,7 +334,20 @@ export default function PriceListPage({withCart=false}) {
           </div>
         )}
       </MobileScrollable>
-      <div style={{ marginTop: 32, textAlign: "right", marginRight: 16 }}>
+      <div style={{ marginTop: 32, marginRight: 16, display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <Button
+          onClick={() => window.open("https://wa.me/6285190077091?text=Hai%20Minsoul%2C%20bisa%20bantu%20aku%20pilih%20produk%3F%20Aku%20sedang%20belanja%20di%20katalog%20online%20Byusoul%20nih.%20Terimakasih%20kak", "_blank")}
+          style={{
+            borderColor: "#52c41a",
+            color: "#52c41a",
+            backgroundColor: "#fff",
+            borderWidth: "1px",
+            fontWeight: "bold",
+            maxWidth: 200,
+          }}
+        >
+          Konsultasi lewat WA
+        </Button>
         <Button type="default" onClick={() => navigate("/")} style={{ backgroundColor: "#fff" }}>
           Kembali ke Halaman Utama
         </Button>

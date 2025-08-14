@@ -95,7 +95,7 @@ const Landing = () => {
             animation: "slideDown 0.5s ease-out"
           }}
         >
-          ONGOING PROMO 8.8 + HUT RI DISC UP TO 80%, FOLLOW{" "}
+          FREE ONGKIR UNTUK PENGANTARAN DALAM RINGROAD JOGJA | FOLLOW INSTAGRAM {" "}
           <a
             href="https://www.instagram.com/byusoul_id/"
             target="_blank"
@@ -104,7 +104,7 @@ const Landing = () => {
           >
             @byusoul_id
           </a>{" "}
-          UNTUK INFO LEBIH LANJUT
+          UNTUK INFO LAINNYA
         </div>
       )}
       <style>
@@ -143,7 +143,7 @@ const Landing = () => {
       </div>
       
       <h1 style={{ textAlign: "center", margin: "0 10px", marginBottom: "20px", fontWeight: 900 }}>
-        Welcome to Byusoul!
+        Selamat Datang di Byusoul Cosmetics!
       </h1>
       <div style={{ width: "100%", maxWidth: "400px", position: "relative", marginBottom: "20px" }}>
         <input
