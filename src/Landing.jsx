@@ -102,7 +102,7 @@ const Landing = () => {
             animation: "slideDown 0.5s ease-out"
           }}
         >
-          FREE ONGKIR UNTUK PENGANTARAN DALAM RINGROAD JOGJA | FOLLOW INSTAGRAM {" "}
+          GRATIS ONGKIR UNTUK PENGANTARAN 8KM DARI TAMAN SISWA | FOLLOW INSTAGRAM {" "}
           <a
             href="https://www.instagram.com/byusoul_id/"
             target="_blank"

@@ -236,7 +236,7 @@ export default function PriceListPage({withCart=false}) {
         <p style={{ fontStyle: "normal" }}>
           <strong>Produk Byusoul</strong><br />
           <span style={{ color: "red", fontWeight: "normal" }}>
-            Gratis ongkir untuk pengantaran same-day di dalam Ring Road Jogja
+            Gratis ongkir untuk pengantaran 8 km dari Byusoul Taman Siswa
           </span>
         </p>
         
