@@ -256,6 +256,35 @@ export default function CartPage() {
                 />
               </div>
             )}
+            {selectedShipping === "Ambil di store" && (
+              <div>
+                Cek Lokasi Store: <a href="https://maps.app.goo.gl/5KsMs8ULYTh1Xvvg7" target="_blank" rel="noopener noreferrer">Byusoul Taman Siswa</a>
+              </div>
+            )}
+            {(() => {
+              let distanceNumber = null;
+              if (distanceText) {
+                // Extract number, handle both commas and dots
+                const match = distanceText.match(/[\d.,]+/);
+                if (match) {
+                  distanceNumber = parseFloat(match[0].replace(",", "."));
+                }
+              }
+              return (
+                <>
+                  {distanceNumber !== null && distanceNumber > 15 && selectedShipping === "Same-day/instant" && (
+                    <div style={{ marginTop: 8, fontWeight: "normal", color: "red" }}>
+                      Pastikan jangkauan dapat diraih dengan layanan same-day/instant
+                    </div>
+                  )}
+                  {distanceNumber !== null && distanceNumber > 15 && selectedShipping !== "Same-day/instant" && (
+                    <div style={{ marginTop: 8, fontWeight: "bold", color: "#52c41a" }}>
+                      Menerima kiriman ke seluruh Indonesia
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: 20, marginTop: 8 }}>
