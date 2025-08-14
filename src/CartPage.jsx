@@ -1,4 +1,3 @@
-
 import { Table, InputNumber, Button, Space, Flex, Radio, Modal } from "antd";
 import { useContext, useState, useEffect, useRef } from "react";
 import { CartContext } from "./CartContext";
@@ -272,18 +271,20 @@ export default function CartPage() {
                 }
               }
               return (
-                <>
-                  {distanceNumber !== null && distanceNumber > 15 && selectedShipping === "Same-day/instant" && (
-                    <div style={{ marginTop: 8, fontWeight: "normal", color: "red" }}>
-                      Pastikan jangkauan dapat diraih dengan layanan same-day/instant
-                    </div>
-                  )}
-                  {distanceNumber !== null && distanceNumber > 15 && selectedShipping !== "Same-day/instant" && (
-                    <div style={{ marginTop: 8, fontWeight: "bold", color: "#52c41a" }}>
-                      Menerima kiriman ke seluruh Indonesia
-                    </div>
-                  )}
-                </>
+                selectedShipping !== "Ambil di store" && (
+                  <>
+                    {distanceNumber !== null && distanceNumber > 15 && selectedShipping === "Same-day/instant" && (
+                      <div style={{ marginTop: 8, fontWeight: "normal", color: "red" }}>
+                        Pastikan jangkauan dapat diraih dengan layanan same-day/instant
+                      </div>
+                    )}
+                    {distanceNumber !== null && distanceNumber > 15 && selectedShipping !== "Same-day/instant" && (
+                      <div style={{ marginTop: 8, fontWeight: "bold", color: "#52c41a" }}>
+                        Menerima kiriman ke seluruh Indonesia
+                      </div>
+                    )}
+                  </>
+                )
               );
             })()}
           </div>
@@ -300,11 +301,19 @@ export default function CartPage() {
                   distanceNumber = parseFloat(match[0].replace(",", "."));
                 }
               }
-              return distanceNumber !== null && distanceNumber < 8 ? (
-                <div style={{ color: "red", fontWeight: "bold", marginTop: 4 }}>
-                  Gratis Ongkir
-                </div>
-              ) : null;
+              return (
+                distanceNumber !== null && distanceNumber < 8 ? (
+                  total >= 50000 ? (
+                    <div style={{ color: "red", fontWeight: "bold", marginTop: 4 }}>
+                      Gratis Ongkir
+                    </div>
+                  ) : (
+                    <div style={{ color: "red", fontWeight: "bold", marginTop: 4 }}>
+                      Belanja hingga Rp 50,000 agar Gratis Ongkir
+                    </div>
+                  )
+                ) : null
+              );
             })()}
           </div>
           <Button
@@ -365,7 +374,19 @@ export default function CartPage() {
               <img src="/Logo Long White.png" style={{ width: 150, height: 70, objectFit: "contain", marginBottom: 10 }} />
               <p style={{ fontSize: "20px", fontWeight: "bold" }}>Order kamu sudah di catat ya, Byuties!</p>
               <p>Kamu akan segera diarahkan ke WA Byusoul.</p>
-              <Button type="primary" style={{ marginTop: 10 }} onClick={() => setShowPopup(false)}>Saya Mengerti</Button>
+              <Button
+                type="primary"
+                style={{ marginTop: 10 }}
+                onClick={() => {
+                  setShowPopup(false);
+                  const orderText = navigator.clipboard.readText();
+                  orderText.then(text => {
+                    window.open(`https://wa.me/6285190077091?text=${encodeURIComponent(text)}`, "_blank");
+                  });
+                }}
+              >
+                Saya Mengerti
+              </Button>
             </div>
           </div>
         )}
