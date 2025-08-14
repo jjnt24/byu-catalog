@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactGA from "react-ga4";
 import "@fontsource/nunito";
 import { useNavigate } from "react-router-dom";
 
@@ -33,6 +34,12 @@ const Landing = () => {
   }, []);
 
   const handleLihatProduk = () => {
+    ReactGA.event({
+      category: "Landing Page",
+      action: "Click Mulai Pencarian",
+      label: "Submit User Data"
+    });
+
     let valid = true;
     if (namaKamu.trim().length < 3) {
       setNameError("Nama tidak valid");
@@ -183,7 +190,14 @@ const Landing = () => {
             fontWeight: 600,
             fontSize: "14px",
           }}
-          onClick={() => setShowLoginPopup(true)}
+          onClick={() => {
+            ReactGA.event({
+              category: "Landing Page",
+              action: "Click Cari Button",
+              label: "Open Login Popup"
+            });
+            setShowLoginPopup(true);
+          }}
         >
           Cari
         </button>
