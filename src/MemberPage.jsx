@@ -158,9 +158,10 @@ export default function MemberPage() {
     <div
       style={{
         backgroundColor: "#fff",
+        width: "100vw",
         minHeight: "100vh",
         overflowX: "hidden",
-        padding: "16px",
+        padding: "100px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -185,30 +186,7 @@ export default function MemberPage() {
       <h2 style={{ textAlign: "center", marginTop: 16, marginBottom: 4 }}>
         Hi, {name}
       </h2>
-      {uid && (
-        <>
-          <p style={{ textAlign: "center", margin: 2, fontSize: "0.85em", color: "#555" }}>
-            UID: {uid}
-          </p>
-          <div style={{ textAlign: "center", marginBottom: 8 }}>
-            <button
-              style={{
-                padding: "6px 16px",
-                fontSize: "0.95em",
-                background: "#eee",
-                color: "#333",
-                border: "1px solid #ccc",
-                borderRadius: "6px",
-                cursor: "pointer",
-                marginTop: "4px"
-              }}
-              onClick={checkFirestoreData}
-            >
-              Check Firestore Data
-            </button>
-          </div>
-        </>
-      )}
+      {/* UID and Check Firestore Data section removed as requested */}
       <p style={{ textAlign: "center", margin: 2 }}>
         Member Sejak: {creationDate ? new Date(creationDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
       </p>

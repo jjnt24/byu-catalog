@@ -234,8 +234,8 @@ function MemberRegister() {
                         .then((result) => {
                           console.log('User signed in successfully:', result.user);
                           setSuccessMessage('Verifikasi Berhasil! Silakan login ulang untuk mengakses akun kamu');
-                          const username = phoneNumber.replace(/^\+62/, '0');
-                          const pseudoEmail = username + "@byumember.com";
+                          const localPhone = phoneNumber.replace(/^\+62/, '0');
+                          const pseudoEmail = localPhone + "@byumember.com";
                           // Format password as DDMMYYYY from dateOfBirth using manual parsing
                           const parts = dateOfBirth.split('-'); // ["YYYY","MM","DD"]
                           const password = parts[2] + parts[1] + parts[0]; // DDMMYYYY
@@ -255,7 +255,7 @@ function MemberRegister() {
                             name: name,
                             birthDate: dateOfBirth,
                             phoneNumber: phoneNumber,
-                            username: username
+                            localPhone: localPhone
                           })
                           .then(() => {
                             console.log('User data stored in Firestore');
