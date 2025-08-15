@@ -34,7 +34,7 @@ export default function MemberPage() {
       socialMedias,
     };
     try {
-      await setDoc(doc(db, "members", uid), data, { merge: true });
+      await setDoc(doc(db, "MemberData", uid), data, { merge: true });
     } catch (err) {
       console.error("Failed to save member data:", err);
     }
@@ -44,7 +44,7 @@ export default function MemberPage() {
   async function loadMemberData(user) {
     if (!user) return;
     try {
-      const ref = doc(db, "members", user.uid);
+      const ref = doc(db, "MemberData", user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
@@ -132,6 +132,25 @@ export default function MemberPage() {
     setSocialMedias([...socialMedias, { platform: '', handle: '' }]);
   };
 
+  // Button: Check Firestore Data for current UID
+  const checkFirestoreData = async () => {
+    if (!uid) {
+      console.warn("No UID available.");
+      return;
+    }
+    try {
+      const ref = doc(db, "MemberData", uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        console.log("Firestore document for UID", uid, ":", snap.data());
+      } else {
+        console.log("No document found in Firestore for UID", uid);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Firestore data for UID", uid, ":", err);
+    }
+  };
+
   return (
     <div
       style={{
@@ -163,6 +182,30 @@ export default function MemberPage() {
       <h2 style={{ textAlign: "center", marginTop: 16, marginBottom: 4 }}>
         Hi, {name}
       </h2>
+      {uid && (
+        <>
+          <p style={{ textAlign: "center", margin: 2, fontSize: "0.85em", color: "#555" }}>
+            UID: {uid}
+          </p>
+          <div style={{ textAlign: "center", marginBottom: 8 }}>
+            <button
+              style={{
+                padding: "6px 16px",
+                fontSize: "0.95em",
+                background: "#eee",
+                color: "#333",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                cursor: "pointer",
+                marginTop: "4px"
+              }}
+              onClick={checkFirestoreData}
+            >
+              Check Firestore Data
+            </button>
+          </div>
+        </>
+      )}
       <p style={{ textAlign: "center", margin: 2 }}>Member Sejak:</p>
       <p style={{ textAlign: "center", margin: 2 }}>Phone Number: {phoneNumber}</p>
       <span
