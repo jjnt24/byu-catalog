@@ -334,7 +334,7 @@ const Landing = () => {
         </div>
       )}
       <div style={{ position: "absolute", bottom: "10px", width: "100%", textAlign: "center", color: "#888", fontSize: "12px" }}>
-        Versi 1.0
+        Versi 1.0.1
         <span
           style={{ color: "#888", textDecoration: "underline", cursor: "pointer", marginLeft: "6px" }}
           onClick={() => navigate('/memberlogin')}

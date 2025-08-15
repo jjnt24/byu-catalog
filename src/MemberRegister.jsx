@@ -14,6 +14,7 @@ function MemberRegister() {
   const db = getFirestore();
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [otpSentMessage, setOtpSentMessage] = useState('');
 
   const sendOtp = () => {
     if (!phoneNumber) {
@@ -24,6 +25,7 @@ function MemberRegister() {
     signInWithPhoneNumber(auth, phoneNumber, appVerifier)
       .then((confirmationResult) => {
         console.log('OTP sent!');
+        setOtpSentMessage('OTP sudah dikirim');
         window.confirmationResult = confirmationResult; // Store for verification
       })
       .catch((error) => {
@@ -96,6 +98,7 @@ function MemberRegister() {
           />
           <button onClick={handleGetOtpClick}>Get OTP</button>
         </div>
+        {otpSentMessage && <div style={{ color: 'green', marginBottom: 10 }}>{otpSentMessage}</div>}
         <input
           type="text"
           placeholder="Enter OTP"
@@ -180,7 +183,7 @@ function MemberRegister() {
             {successMessage}
           </div>
         )}
-        {showRecaptcha && <div id="recaptcha-container" style={{ marginTop: 20 }}></div>}
+        <div id="recaptcha-container" style={{ marginTop: 20, display: showRecaptcha ? 'block' : 'none' }}></div>
       </div>
     </div>
   );
