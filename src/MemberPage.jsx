@@ -19,6 +19,7 @@ export default function MemberPage() {
   const [job, setJob] = useState("");
   const [socialMedias, setSocialMedias] = useState([{ platform: '', handle: '' }]);
   const [uid, setUid] = useState(null);
+  const [creationDate, setCreationDate] = useState("");
   const navigate = useNavigate();
 
   // Firestore: Save member data
@@ -56,6 +57,7 @@ export default function MemberPage() {
           if (Array.isArray(data.favoriteBrands)) setFavoriteBrands(data.favoriteBrands);
           if (Array.isArray(data.socialMedias)) setSocialMedias(data.socialMedias);
           if (typeof data.phoneNumber === "string") setPhoneNumber(data.phoneNumber);
+          // creationDate is now set from Auth, not Firestore
         }
       } else {
         // If no data, use defaults & set phone number from auth
@@ -82,6 +84,7 @@ export default function MemberPage() {
       }
       setUid(user.uid);
       setPhoneNumber(user.phoneNumber || "");
+      setCreationDate(user.metadata.creationTime);
       loadMemberData(user);
     });
     return () => unsub();
@@ -206,8 +209,12 @@ export default function MemberPage() {
           </div>
         </>
       )}
-      <p style={{ textAlign: "center", margin: 2 }}>Member Sejak:</p>
-      <p style={{ textAlign: "center", margin: 2 }}>Phone Number: {phoneNumber}</p>
+      <p style={{ textAlign: "center", margin: 2 }}>
+        Member Sejak: {creationDate ? new Date(creationDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+      </p>
+      <p style={{ textAlign: "center", margin: 2 }}>
+        Nomor Handphone: {phoneNumber ? phoneNumber.replace(/^\+62/, '0') : "-"}
+      </p>
       <span
         style={{
           display: "inline-flex",
@@ -536,7 +543,7 @@ export default function MemberPage() {
         )}
         <div style={{ marginTop: 24 }}>
           <img
-            src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${phoneNumber}&scale=3&height=10&includetext=true&filetype=svg&backgroundcolor=ffffff`}
+            src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${phoneNumber ? phoneNumber.replace(/^\+62/, '0') : ''}&scale=3&height=10&includetext=true&filetype=svg&backgroundcolor=ffffff`}
             alt="Barcode"
             style={{ width: "300px", height: "70px", objectFit: "contain" }}
           />

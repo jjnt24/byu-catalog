@@ -1,268 +1,186 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
 import { auth } from './firebase';
-import { createUserWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { RecaptchaVerifier, signInWithPhoneNumber, EmailAuthProvider, linkWithCredential } from 'firebase/auth';
+import { getFirestore, collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 function MemberRegister() {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState(null);
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
-  const recaptchaVerifier = useRef(null);
   const navigate = useNavigate();
+  const recaptchaVerifierRef = useRef(null);
+  const [showRecaptcha, setShowRecaptcha] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const db = getFirestore();
+  const [name, setName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+
+  const sendOtp = () => {
+    if (!phoneNumber) {
+      console.error('Phone number is required');
+      return;
+    }
+    const appVerifier = recaptchaVerifierRef.current;
+    signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+      .then((confirmationResult) => {
+        console.log('OTP sent!');
+        window.confirmationResult = confirmationResult; // Store for verification
+      })
+      .catch((error) => {
+        console.error('Error sending OTP:', error);
+      });
+  };
+
+  const initializeRecaptcha = () => {
+    if (!recaptchaVerifierRef.current) {
+      recaptchaVerifierRef.current = new RecaptchaVerifier(
+        auth,
+        'recaptcha-container',
+        {
+          size: 'invisible',
+          callback: (response) => {
+            console.log('Invisible reCAPTCHA solved:', response);
+            sendOtp();
+          },
+          'expired-callback': () => {
+            console.log('Invisible reCAPTCHA expired');
+          }
+        }
+      );
+      recaptchaVerifierRef.current.render();
+    }
+  };
+
+  const handleGetOtpClick = async () => {
+    setShowRecaptcha(true);
+    initializeRecaptcha();
+    if (recaptchaVerifierRef.current) {
+      try {
+        await recaptchaVerifierRef.current.verify(); // triggers the invisible reCAPTCHA
+        // callback will run automatically after successful verification
+      } catch (error) {
+        console.error("reCAPTCHA verification failed:", error);
+      }
+    }
+  };
 
   useEffect(() => {
-    console.log('Auth object:', auth);
-    let retryTimeout = null;
-
-    const initializeRecaptcha = () => {
-      const container = document.getElementById('recaptcha-container');
-      console.log('Recaptcha container:', container);
-      if (container && auth && !recaptchaVerifier.current) {
-        try {
-          recaptchaVerifier.current = new RecaptchaVerifier(
-            'recaptcha-container',
-            {
-              size: 'normal',
-              callback: () => {
-                // reCAPTCHA solved - will proceed with submit
-              },
-              'expired-callback': () => {
-                setError('reCAPTCHA expired, please try again.');
-              },
-            },
-            auth
-          );
-          recaptchaVerifier.current.render().then(() => {
-            setRecaptchaReady(true);
-          }).catch(() => {});
-        } catch (err) {
-          console.error('Recaptcha initialization error:', err);
-          setError('Failed to initialize reCAPTCHA. Retrying...');
-          retryTimeout = setTimeout(() => {
-            recaptchaVerifier.current = null;
-            initializeRecaptcha();
-          }, 3000);
-        }
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      requestAnimationFrame(() => {
-        initializeRecaptcha();
-      });
-    }
-
-    return () => {
-      if (retryTimeout) clearTimeout(retryTimeout);
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-        recaptchaVerifier.current = null;
-      }
-    };
+    // Removed initialization from here to only initialize on button click
   }, []);
-
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!phoneNumber || phoneNumber.length < 3) {
-      setError('Please enter a valid phone number.');
-      return;
-    }
-
-    if (!recaptchaVerifier.current) {
-      setError('reCAPTCHA not ready. Please refresh the page.');
-      return;
-    }
-
-    const cleanedNumber = phoneNumber.replace(/\D/g, '');
-    const fullPhoneNumber = phoneNumber.startsWith('62') ? '+' + phoneNumber : '+62' + cleanedNumber;
-
-    try {
-      const appVerifier = recaptchaVerifier.current;
-      const confirmation = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
-      setConfirmationResult(confirmation);
-      setOtpSent(true);
-      setOtpVerified(false);
-      setOtp('');
-      setError('');
-    } catch (err) {
-      console.error('Error sending OTP:', err);
-      setError(
-        (typeof window !== 'undefined' && window.location.hostname === 'localhost')
-          ? 'Error sending OTP. If you are testing locally, please use Firebase test phone numbers as configured in your Firebase Console to avoid internal errors.'
-          : err.message || 'Failed to send OTP'
-      );
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!otp) {
-      setError('Please enter the OTP.');
-      return;
-    }
-    try {
-      await confirmationResult.confirm(otp);
-      setOtpVerified(true);
-      setError('');
-    } catch (err) {
-      console.error('Error verifying OTP:', err);
-      setError(err.message || 'Failed to verify OTP');
-    }
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!birthDate) {
-      setError('Please enter your tanggal lahir.');
-      return;
-    }
-
-    if (!password) {
-      setError('Please enter your password.');
-      return;
-    }
-
-    if (password.length < 6 || !/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
-      setError('Password must be at least 6 characters long and contain both letters and numbers.');
-      return;
-    }
-
-    try {
-      const cleanedNumber = phoneNumber.replace(/\D/g, '');
-      const email = phoneNumber.startsWith('62') ? phoneNumber + '@byu.com' : '62' + cleanedNumber + '@byu.com';
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Registration successful:', userCredential);
-      navigate('/memberpage');
-    } catch (err) {
-      console.error('Error registering:', err);
-      setError(err.message || 'Failed to register');
-    }
-  };
-
-  if (!recaptchaReady) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ padding: 20, border: '1px solid #ccc', borderRadius: 4, width: 300, textAlign: 'center' }}>
-          <div id="recaptcha-container"></div>
-          <p>Loading verification...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ padding: 20, border: '1px solid #ccc', borderRadius: 4, width: 300 }}>
         <h2>Gabung Byu Member</h2>
-
-        {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
-
-        <form
-          onSubmit={
-            !otpSent
-              ? handleSendOtp
-              : !otpVerified
-              ? handleVerifyOtp
-              : handleRegister
-          }
+        <input
+          type="text"
+          placeholder="Name"
+          style={{ width: '100%', marginBottom: 10 }}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          type="date"
+          placeholder="Tanggal Lahir"
+          style={{ width: '100%', marginBottom: 10 }}
+          value={dateOfBirth}
+          onChange={(e) => setDateOfBirth(e.target.value)}
+        />
+        <div style={{ display: 'flex', marginBottom: 10 }}>
+          <input
+            type="tel"
+            placeholder="Phone Number"
+            style={{ flex: 1, marginRight: 10 }}
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+          />
+          <button onClick={handleGetOtpClick}>Get OTP</button>
+        </div>
+        <input
+          type="text"
+          placeholder="Enter OTP"
+          style={{ width: '100%', marginBottom: 10 }}
+          value={otpCode}
+          onChange={(e) => setOtpCode(e.target.value)}
+        />
+        <button
+          onClick={() => {
+            if (!otpCode) {
+              console.error('OTP code is required');
+              return;
+            }
+            if (window.confirmationResult) {
+              window.confirmationResult.confirm(otpCode)
+                .then((result) => {
+                  console.log('User signed in successfully:', result.user);
+                  setSuccessMessage('Verification successful! You are now signed in.');
+                  const username = phoneNumber.replace(/^\+62/, '0');
+                  const pseudoEmail = username + "@byumember.com";
+                  // Format password as DDMMYYYY from dateOfBirth using manual parsing
+                  const parts = dateOfBirth.split('-'); // ["YYYY","MM","DD"]
+                  const password = parts[2] + parts[1] + parts[0]; // DDMMYYYY
+                  const credential = EmailAuthProvider.credential(pseudoEmail, password);
+                  linkWithCredential(result.user, credential)
+                    .then((usercred) => {
+                      console.log("Pseudo-email linked to phone-auth user:", usercred.user.uid);
+                    })
+                    .catch((error) => {
+                      if (error.code === "auth/credential-already-in-use") {
+                        console.log("Pseudo-email already linked to another account");
+                      } else {
+                        console.error("Error linking pseudo-email credential:", error);
+                      }
+                    });
+                  setDoc(doc(db, 'MemberData', result.user.uid), {
+                    name: name,
+                    birthDate: dateOfBirth,
+                    phoneNumber: phoneNumber,
+                    username: username
+                  })
+                  .then(() => {
+                    console.log('User data stored in Firestore');
+                    // Read back to verify
+                    import('firebase/firestore').then(({ getDoc }) => {
+                      getDoc(doc(db, 'MemberData', result.user.uid)).then((docSnap) => {
+                        if (docSnap.exists()) {
+                          console.log('Firestore document data:', docSnap.data());
+                        } else {
+                          console.log('No such document in Firestore');
+                        }
+                      }).catch((error) => {
+                        console.error('Error reading back Firestore data:', error);
+                      });
+                    });
+                  })
+                  .catch((error) => {
+                    console.error('Error storing user data:', error);
+                  });
+                })
+                .catch((error) => {
+                  console.error('Error verifying OTP:', error);
+                });
+            } else {
+              console.error('No OTP request has been made yet');
+            }
+          }}
+          style={{ width: '100%', marginBottom: 10 }}
         >
-          <div style={{ marginBottom: 4, fontWeight: 'bold' }}>Nomor Handphone</div>
-          <div style={{ display: 'flex', marginBottom: 10, width: '100%' }}>
-            <span
-              style={{
-                padding: '0 8px',
-                lineHeight: '32px',
-                border: '1px solid #ccc',
-                borderRadius: '4px 0 0 4px',
-                backgroundColor: '#eee',
-                userSelect: 'none'
-              }}
-            >
-              +62
-            </span>
-            <input
-              type="tel"
-              placeholder="Phone number"
-              style={{ flex: 1, border: '1px solid #ccc', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '6px 8px' }}
-              value={phoneNumber.startsWith('62') ? phoneNumber.slice(2) : phoneNumber}
-              onChange={e => {
-                const input = e.target.value.replace(/\D/g, '');
-                setPhoneNumber(input);
-              }}
-              disabled={otpSent}
-            />
+          Verify OTP
+        </button>
+        <button
+          onClick={() => {
+            navigate('/memberlogin');
+          }}
+          style={{ width: '100%', marginBottom: 10 }}
+        >
+          Back to Login
+        </button>
+        {successMessage && (
+          <div style={{ color: 'green', marginBottom: 10 }}>
+            {successMessage}
           </div>
-
-          {otpSent && !otpVerified && (
-            <>
-              <div style={{ marginBottom: 4, fontWeight: 'bold' }}>Enter OTP</div>
-              <div style={{ marginBottom: 10, width: '100%' }}>
-                <input
-                  type="text"
-                  placeholder="OTP"
-                  style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: '6px 8px' }}
-                  value={otp}
-                  onChange={e => setOtp(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-
-          {otpVerified && (
-            <>
-              <div style={{ marginBottom: 4, fontWeight: 'bold' }}>Password</div>
-              <div style={{ marginBottom: 10, width: '100%' }}>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: '6px 8px' }}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-              </div>
-              <div style={{ marginBottom: 4, fontWeight: 'bold' }}>Tanggal Lahir</div>
-              <div style={{ marginBottom: 10, width: '100%' }}>
-                <input
-                  type="date"
-                  placeholder="Tanggal Lahir"
-                  style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: '6px 8px' }}
-                  value={birthDate}
-                  onChange={e => setBirthDate(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-
-          {!otpSent && <button style={{ width: '100%', marginBottom: 8 }} type="submit" disabled={!recaptchaReady}>Send OTP</button>}
-          {otpSent && !otpVerified && <button style={{ width: '100%', marginBottom: 8 }} type="submit">Verify OTP</button>}
-          {otpVerified && (
-            <button
-              style={{ width: '100%', marginBottom: 8 }}
-              type="submit"
-              disabled={!birthDate || !password}
-            >
-              Register
-            </button>
-          )}
-          <button
-            type="button"
-            style={{ width: '100%', backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: 4, padding: '6px 8px' }}
-            onClick={() => navigate('/memberlogin')}
-          >
-            Kembali ke Login
-          </button>
-        </form>
+        )}
+        {showRecaptcha && <div id="recaptcha-container" style={{ marginTop: 20 }}></div>}
       </div>
     </div>
   );

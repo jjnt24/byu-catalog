@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 const containerStyle = {
   minHeight: "100vh",
@@ -81,13 +83,21 @@ function MemberLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [creationDate, setCreationDate] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Automatically append pseudo-email domain if missing
+      const loginEmail = email.includes("@") ? email : email + "@byumember.com";
+      await signInWithEmailAndPassword(auth, loginEmail, password);
+      const userDoc = await getDoc(doc(db, "MemberData", auth.currentUser.uid));
+      if (userDoc.exists()) {
+        setCreationDate(userDoc.data().createdAt);
+      }
       navigate("/memberpage");
     } catch (err) {
       setError("Email atau password salah");
@@ -107,13 +117,13 @@ function MemberLogin() {
         {error && <div style={errorStyle}>{error}</div>}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <label htmlFor="email" style={labelStyle}>
-            Email
+            Nomor Handphone
           </label>
           <input
             id="email"
-            type="email"
+            type="text"
             autoComplete="email"
-            placeholder="Masukkan email"
+            placeholder="Masukkan nomor handphone"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={inputStyle}
@@ -125,13 +135,20 @@ function MemberLogin() {
           </label>
           <input
             id="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Masukkan password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={inputStyle}
           />
+          <button
+            type="button"
+            style={{ marginTop: "4px", alignSelf: "flex-end", fontSize: "12px", background: "none", border: "none", color: "#1890ff", cursor: "pointer" }}
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? "Hide" : "Show"} Password
+          </button>
         </div>
         <button type="submit" style={buttonStyle}>
           Login
@@ -139,6 +156,7 @@ function MemberLogin() {
         <button type="button" style={createAccountButtonStyle} onClick={handleCreateAccount}>
           Create Account
         </button>
+        {creationDate && <div style={{ marginTop: "10px", textAlign: "center", fontSize: "14px", color: "#555" }}>Member sejak: {creationDate}</div>}
       </form>
     </div>
   );
