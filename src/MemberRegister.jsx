@@ -18,10 +18,13 @@ function MemberRegister() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [loadingOtp, setLoadingOtp] = useState(false);
 
   const sendOtp = () => {
     if (!phoneNumber) {
       console.error('Phone number is required');
+      setLoadingOtp(false);
       return;
     }
     const appVerifier = recaptchaVerifierRef.current;
@@ -31,9 +34,11 @@ function MemberRegister() {
         setOtpSentMessage('Kode 6 digit sudah dikirim ke SMS');
         setShowOtpInput(true);
         window.confirmationResult = confirmationResult; // Store for verification
+        setLoadingOtp(false);
       })
       .catch((error) => {
         console.error('Error sending OTP:', error);
+        setLoadingOtp(false);
       });
   };
 
@@ -62,22 +67,41 @@ function MemberRegister() {
     setTimeout(() => setButtonPressed(false), 150);
     setShowRecaptcha(true);
     initializeRecaptcha();
+    setLoadingOtp(true);
     if (recaptchaVerifierRef.current) {
       try {
         await recaptchaVerifierRef.current.verify(); // triggers the invisible reCAPTCHA
         // callback will run automatically after successful verification
+        setOtpCooldown(60);
       } catch (error) {
         console.error("reCAPTCHA verification failed:", error);
+        setLoadingOtp(false);
       }
+    } else {
+      setLoadingOtp(false);
     }
   };
+
+  useEffect(() => {
+    if (otpCooldown === 0) return;
+    const timerId = setInterval(() => {
+      setOtpCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, [otpCooldown]);
 
   useEffect(() => {
     // Removed initialization from here to only initialize on button click
   }, []);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2', color: '#000' }}>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2', color: '#000' }}>
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -105,7 +129,7 @@ function MemberRegister() {
           animation: spin 1s linear infinite;
         }
         .otp-sent-message {
-          animation: fade 1.5s ease-in-out 0s 4;
+          animation: fade 1.5s ease-in-out 0s 5;
           color: #000;
           margin-bottom: 10px;
         }
@@ -113,8 +137,25 @@ function MemberRegister() {
           transform: scale(0.95);
           box-shadow: 0 2px 6px rgba(248, 40, 150, 0.6);
         }
+        .phone-input-container {
+          position: relative;
+          flex: 1;
+        }
+        .phone-input-spinner {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          border: 2px solid #ccc;
+          border-top: 2px solid #333;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          pointer-events: none;
+        }
       `}</style>
-      <div style={{ padding: '30px 20px', border: '1px solid #ccc', borderRadius: 12, width: '90%', maxWidth: 380, boxSizing: 'border-box', backgroundColor: '#fff', color: '#000' }}>
+      <div style={{ padding: '30px 20px', border: '1px solid #ccc', borderRadius: 12, width: '90%', maxWidth: 400, boxSizing: 'border-box', backgroundColor: '#fff', color: '#000' }}>
         <h2>Daftar Member Byu</h2>
         <label style={{ marginBottom: 12 }}>Nama</label>
         <input
@@ -135,35 +176,39 @@ function MemberRegister() {
         <label style={{ marginBottom: 12 }}>Nomor HP Aktif</label>
         <div style={{ display: 'flex', marginBottom: 16, alignItems: 'center' }}>
           <span style={{ padding: '6px 10px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px 0 0 4px', fontSize: '0.85rem', userSelect: 'none', flexShrink: 0, color: '#000', backgroundColor: '#fff' }}>+62</span>
-          <input
-            type="tel"
-            placeholder="Masukkan Nomor HP"
-            style={{ flex: 1, marginRight: 6, fontSize: '0.85rem', padding: '6px', borderRadius: '0 4px 4px 0', borderLeft: 'none', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc' }}
-            value={phoneNumber.startsWith('+62') ? phoneNumber.slice(3) : phoneNumber}
-            onChange={(e) => {
-              let val = e.target.value;
-              // Remove any leading +62 or 62
-              val = val.replace(/^(\+62|62)/, '');
-              // Remove any leading 0, since +62 is already there
-              val = val.replace(/^0+/, '');
-              setPhoneNumber('+62' + val);
-            }}
-          />
+          <div className="phone-input-container">
+            <input
+              type="tel"
+              placeholder="Masukkan Nomor HP"
+              style={{ width: '100%', marginRight: 6, fontSize: '0.85rem', padding: '6px', borderRadius: '0 4px 4px 0', borderLeft: 'none', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc' }}
+              value={phoneNumber.startsWith('+62') ? phoneNumber.slice(3) : phoneNumber}
+              onChange={(e) => {
+                let val = e.target.value;
+                // Remove any leading +62 or 62
+                val = val.replace(/^(\+62|62)/, '');
+                // Remove any leading 0, since +62 is already there
+                val = val.replace(/^0+/, '');
+                setPhoneNumber('+62' + val);
+              }}
+            />
+            {loadingOtp && <div className="phone-input-spinner"></div>}
+          </div>
           <button 
             onClick={handleGetOtpClick} 
+            disabled={otpCooldown > 0 || successMessage !== ''}
             style={{ 
               fontSize: '0.85rem', 
               backgroundColor: '#f82896ff', 
               color: 'white', 
               border: 'none', 
               padding: '6px 12px', 
-              cursor: 'pointer', 
+              cursor: otpCooldown > 0 || successMessage !== '' ? 'not-allowed' : 'pointer', 
               flexShrink: 0,
               transition: 'transform 0.1s ease, box-shadow 0.1s ease',
               ...(buttonPressed ? { transform: 'scale(0.95)', boxShadow: '0 2px 6px rgba(248, 40, 150, 0.6)' } : {})
             }}
           >
-            Kirim OTP
+            {otpCooldown > 0 ? `Kirim Lagi (${otpCooldown}s)` : 'Kirim OTP'}
           </button>
         </div>
         {otpSentMessage && <div className="otp-sent-message">{otpSentMessage}</div>}

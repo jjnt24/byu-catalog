@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase";
 
 const containerStyle = {
   minHeight: "100vh",
@@ -12,7 +10,8 @@ const containerStyle = {
   alignItems: "center",
   justifyContent: "center",
   flexDirection: "column",
-  padding: "0 8px",
+  padding: "0 100px",
+  width: "100vw",
 };
 
 const formStyle = {
@@ -22,11 +21,11 @@ const formStyle = {
   boxShadow: "0 4px 16px rgba(0,0,0,0.09), 0 1.5px 4px rgba(0,0,0,0.08)",
   border: "1px solid #e5e8ef",
   width: "100%",
-  maxWidth: "370px",
+  maxWidth: "400px",
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
-  gap: "14px",
+  gap: "5px",
 };
 
 const labelStyle = {
@@ -83,8 +82,6 @@ function MemberLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [creationDate, setCreationDate] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -94,18 +91,39 @@ function MemberLogin() {
       // Automatically append pseudo-email domain if missing
       const loginEmail = email.includes("@") ? email : email + "@byumember.com";
       await signInWithEmailAndPassword(auth, loginEmail, password);
-      const userDoc = await getDoc(doc(db, "MemberData", auth.currentUser.uid));
-      if (userDoc.exists()) {
-        setCreationDate(userDoc.data().createdAt);
-      }
       navigate("/memberpage");
     } catch (err) {
-      setError("Email atau password salah");
+      setError("Email atau tanggal lahir salah");
     }
   };
 
   const handleCreateAccount = () => {
     navigate("/register");
+  };
+
+  // Helper to convert YYYY-MM-DD to DDMMYYYY
+  const convertDateToDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return day + month + year;
+  };
+
+  // Helper to convert DDMMYYYY back to YYYY-MM-DD for display (not used here but for completeness)
+  const convertDDMMYYYYToDate = (ddmmyyyy) => {
+    if (!ddmmyyyy || ddmmyyyy.length !== 8) return "";
+    const day = ddmmyyyy.substring(0, 2);
+    const month = ddmmyyyy.substring(2, 4);
+    const year = ddmmyyyy.substring(4, 8);
+    return `${year}-${month}-${day}`;
+  };
+
+  // To display the date input, convert stored password DDMMYYYY to YYYY-MM-DD
+  const displayDateValue = () => {
+    if (!password || password.length !== 8) return "";
+    const year = password.substring(4, 8);
+    const month = password.substring(2, 4);
+    const day = password.substring(0, 2);
+    return `${year}-${month}-${day}`;
   };
 
   return (
@@ -131,24 +149,17 @@ function MemberLogin() {
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <label htmlFor="password" style={labelStyle}>
-            Password
+            Tanggal Lahir
           </label>
           <input
             id="password"
-            type={showPassword ? "text" : "password"}
+            type="date"
             autoComplete="current-password"
             placeholder="Masukkan password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={displayDateValue()}
+            onChange={(e) => setPassword(convertDateToDDMMYYYY(e.target.value))}
             style={inputStyle}
           />
-          <button
-            type="button"
-            style={{ marginTop: "4px", alignSelf: "flex-end", fontSize: "12px", background: "none", border: "none", color: "#1890ff", cursor: "pointer" }}
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? "Hide" : "Show"} Password
-          </button>
         </div>
         <button type="submit" style={buttonStyle}>
           Login
@@ -156,7 +167,6 @@ function MemberLogin() {
         <button type="button" style={createAccountButtonStyle} onClick={handleCreateAccount}>
           Create Account
         </button>
-        {creationDate && <div style={{ marginTop: "10px", textAlign: "center", fontSize: "14px", color: "#555" }}>Member sejak: {creationDate}</div>}
       </form>
     </div>
   );
