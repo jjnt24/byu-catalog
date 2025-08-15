@@ -28,7 +28,7 @@ function MemberRegister() {
           recaptchaVerifier.current = new RecaptchaVerifier(
             'recaptcha-container',
             {
-              size: 'invisible',
+              size: 'normal',
               callback: () => {
                 // reCAPTCHA solved - will proceed with submit
               },
