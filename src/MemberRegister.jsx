@@ -5,6 +5,22 @@ import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'fi
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useNavigate } from 'react-router-dom';
 
+const containerStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  height: "100dvh", // Use dynamic viewport height for mobile browser bars
+  width: "100vw",
+  overflow: "hidden",
+  background: "#f7f9fb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "column",
+  padding: "0 8px",
+  boxSizing: "border-box",
+};
+
 function MemberRegister() {
   const navigate = useNavigate();
   const recaptchaVerifierRef = useRef(null);
@@ -32,6 +48,9 @@ function MemberRegister() {
 
   // Add state to track signed-in user for claim flow
   const [claimSignedInUser, setClaimSignedInUser] = useState(null);
+
+  // Dropdown state for belanja status
+  const [belanjaStatus, setBelanjaStatus] = useState(''); // '' | 'sudah' | 'belum'
 
   const functions = getFunctions();
 
@@ -167,7 +186,8 @@ function MemberRegister() {
           name: name,
           birthDate: dateOfBirth,
           phoneNumber: phoneNumber,
-          localPhone: localPhone
+          localPhone: localPhone,
+          status_phone: "verified"
         }, { merge: true });
 
         // --- Change password to birth date in DDMMYYYY format ---
@@ -229,7 +249,8 @@ function MemberRegister() {
         birthDate: dateOfBirth,
         phoneNumber: phoneNumber,
         localPhone: localPhone,
-        accountCreationDate: new Date() // Add creation timestamp for new accounts
+        accountCreationDate: new Date(), // Add creation timestamp for new accounts
+        status_phone: "verified"
       }, { merge: true });
       setVerifyingOtp(false);
       setSuccessMessage('Akun baru berhasil dibuat!');
@@ -241,8 +262,9 @@ function MemberRegister() {
     }
   };
 
-  return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2', color: '#000' }}>
+    return (
+      <div style={containerStyle}>
+        {/* Info Box for Byuties Benefits - only show on initial state */}
       {/* CLAIM FORM BLOCK */}
       {showClaimForm && (
         <>
@@ -265,7 +287,7 @@ function MemberRegister() {
               <label style={{ marginBottom: 8, display: 'block', fontWeight: 500 }}>Nomor Handphone</label>
               <input
                 type="tel"
-                placeholder="Masukkan nomor HP (08xxxx atau +628xxxx)"
+                placeholder="Masukkan nomor HP"
                 value={claimPhone}
                 onChange={e => setClaimPhone(e.target.value)}
                 style={{
@@ -412,27 +434,7 @@ function MemberRegister() {
                 )}
               </div>
             )}
-            <button
-              onClick={() => {
-                setShowClaimForm(false);
-                setClaimPhone('');
-                setClaimResult(null);
-                setClaimLoading(false);
-              }}
-              style={{
-                width: '100%',
-                marginTop: 16,
-                backgroundColor: '#f82896ff',
-                color: 'white',
-                border: 'none',
-                padding: '6px 0',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                borderRadius: 6
-              }}
-            >
-              Kembali
-            </button>
+
           </div>
         </>
       )}
@@ -440,44 +442,88 @@ function MemberRegister() {
       {/* WELCOME SCREEN */}
       {!showClaimForm && !showRegisterForm && !showOtpVerification ? (
         <div style={{ padding: 30, border: '1px solid #ccc', borderRadius: 12, backgroundColor: '#fff', textAlign: 'center', width: '90%', maxWidth: 400 }}>
-          <h2>Selamat Datang!</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}>
-            <button
-              onClick={() => { setShowClaimForm(true); }}
+          <div style={{ fontWeight: 700, fontSize: '1.15rem', marginBottom: 18, color: '#222' }}>
+            Sudah pernah belanja di Byusoul?
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <select
+              value={belanjaStatus}
+              onChange={e => setBelanjaStatus(e.target.value)}
               style={{
-                backgroundColor: '#f82896ff',
-                color: 'white',
-                border: 'none',
-                padding: '12px 0',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                borderRadius: 6,
                 width: '100%',
-                marginBottom: 0,
-                fontWeight: 500
+                padding: '10px',
+                borderRadius: 6,
+                border: '1px solid #ccc',
+                fontSize: '1rem',
+                marginTop: 4,
+                backgroundColor: '#fff',
+                color: '#222'
               }}
             >
-              Sudah, klaim akun saya
-            </button>
-            <button
-              onClick={() => setShowRegisterForm(true)}
-              style={{
-                backgroundColor: '#f82896ff',
-                color: 'white',
-                border: 'none',
-                padding: '12px 0',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                borderRadius: 6,
-                width: '100%',
-                fontWeight: 500
-              }}
-            >
-              Belum, buatkan akun baru
-            </button>
+              <option value="">Pilih status belanja...</option>
+              <option value="sudah">Sudah</option>
+              <option value="belum">Belum</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {belanjaStatus === 'sudah' && (
+              <button
+                onClick={() => { setShowClaimForm(true); }}
+                style={{
+                  backgroundColor: '#f82896ff',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 0',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  borderRadius: 6,
+                  width: '100%',
+                  marginBottom: 0,
+                  fontWeight: 600
+                }}
+              >
+                Klaim Akun dan Poin
+              </button>
+            )}
+            {belanjaStatus === 'belum' && (
+              <button
+                onClick={() => setShowRegisterForm(true)}
+                style={{
+                  backgroundColor: '#f82896ff',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 0',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  borderRadius: 6,
+                  width: '100%',
+                  fontWeight: 600
+                }}
+              >
+                Buat Akun Sekarang
+              </button>
+            )}
           </div>
         </div>
       ) : null}
+
+      {/* Back to Login link - only shown on initial state */}
+      {!showClaimForm && !showRegisterForm && !showOtpVerification && (
+        <div style={{ marginTop: "16px", textAlign: "center" }}>
+          <a
+            href="#"
+            onClick={e => { e.preventDefault(); navigate("/memberlogin"); }}
+            style={{
+              color: "#6c757d",
+              textDecoration: "none",
+              fontSize: "14px",
+              cursor: "pointer"
+            }}
+          >
+            Kembali ke Login
+          </a>
+        </div>
+      )}
 
       {showRegisterForm && !showOtpVerification && (
         <>
@@ -515,16 +561,35 @@ function MemberRegister() {
             />
             <label style={{ marginBottom: 12, display: 'block' }}>Tanggal Lahir</label>
             <input
-              type="date"
-              placeholder="Pilih Tanggal Lahir"
+              type="text"
+              placeholder="DD/MM/YYYY"
               style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
+              value={dateOfBirth.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')} // Convert YYYY-MM-DD to DD/MM/YYYY for display
+              onChange={(e) => {
+                let val = e.target.value;
+                // Only allow numbers and /
+                val = val.replace(/[^0-9/]/g, '');
+                
+                // Auto-insert / as user types
+                if (val.length === 2 && dateOfBirth.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1').length === 1) val += '/';
+                if (val.length === 5 && dateOfBirth.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1').length === 4) val += '/';
+                
+                // Convert DD/MM/YYYY to YYYY-MM-DD for storage
+                const parts = val.split('/');
+                if (parts.length === 3 && parts[2]?.length === 4) {
+                  const newDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                  setDateOfBirth(newDate);
+                } else if (val.length <= 10) {
+                  // Store the formatted display value temporarily
+                  setDateOfBirth(val);
+                }
+              }}
+              maxLength={10}
             />
             <label style={{ marginBottom: 12, display: 'block' }}>Nomor HP Aktif</label>
             <input
               type="tel"
-              placeholder="Masukkan Nomor HP dengan kode negara, misal +6281234567890"
+              placeholder="Masukkan Nomor HP"
               style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
               value={phoneNumber}
               onChange={(e) => {
@@ -557,27 +622,6 @@ function MemberRegister() {
               }}
             >
               Lanjut
-            </button>
-            <button
-              onClick={() => {
-                // Reset claim registration state if user leaves registration
-                setRegisterFromClaim(false);
-                setClaimedPhone('');
-                navigate('/memberlogin');
-              }}
-              style={{
-                width: '100%',
-                marginTop: 16,
-                backgroundColor: '#f82896ff',
-                color: 'white',
-                border: 'none',
-                padding: '6px 0',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                borderRadius: 6
-              }}
-            >
-              Kembali ke Login
             </button>
             <div id="recaptcha-container" style={{ marginTop: 20, display: showRecaptcha ? 'block' : 'none' }}></div>
           </div>
@@ -694,6 +738,60 @@ function MemberRegister() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Back navigation links outside all forms */}
+      {(showRegisterForm || showOtpVerification || showClaimForm) && (
+        <div style={{ marginTop: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {showClaimForm && (
+            <a href="#" 
+              onClick={e => { 
+                e.preventDefault(); 
+                setShowClaimForm(false);
+                setClaimPhone('');
+                setClaimResult(null);
+                setClaimLoading(false);
+              }}
+              style={{ 
+                color: "#6c757d",
+                textDecoration: "none",
+                fontSize: "14px",
+                cursor: "pointer"
+              }}
+            >
+              Kembali ke Halaman Sebelumnya
+            </a>
+          )}
+          {showRegisterForm && (
+            <a href="#" 
+              onClick={e => { 
+                e.preventDefault();
+                setShowRegisterForm(false);
+                setRegisterFromClaim(false);
+                setClaimedPhone('');
+              }}
+              style={{ 
+                color: "#6c757d",
+                textDecoration: "none",
+                fontSize: "14px",
+                cursor: "pointer"
+              }}
+            >
+              Kembali ke Halaman Sebelumnya
+            </a>
+          )}
+          <a href="#" 
+            onClick={e => { e.preventDefault(); navigate("/memberlogin"); }}
+            style={{ 
+              color: "#6c757d",
+              textDecoration: "none",
+              fontSize: "14px",
+              cursor: "pointer"
+            }}
+          >
+            Kembali ke Login
+          </a>
+        </div>
       )}
     </div>
   );

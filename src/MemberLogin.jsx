@@ -4,28 +4,33 @@ import { auth } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 const containerStyle = {
-  minHeight: "100vh",
+  position: "fixed",
+  top: 0,
+  left: 0,
+  height: "100dvh", // Use dynamic viewport height for mobile browser bars
+  width: "100vw",
+  overflow: "hidden",
   background: "#f7f9fb",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   flexDirection: "column",
-  padding: "0 100px",
-  width: "100vw",
+  padding: "0 8px",
+  boxSizing: "border-box",
 };
 
 const formStyle = {
   background: "#fff",
   borderRadius: "12px",
-  padding: "28px 20px",
+  padding: "20px 12px",
   boxShadow: "0 4px 16px rgba(0,0,0,0.09), 0 1.5px 4px rgba(0,0,0,0.08)",
   border: "1px solid #e5e8ef",
   width: "100%",
-  maxWidth: "400px",
+  maxWidth: "360px",
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
-  gap: "5px",
+  gap: "8px",
 };
 
 const labelStyle = {
@@ -36,34 +41,41 @@ const labelStyle = {
 
 const inputStyle = {
   width: "100%",
-  padding: "10px",
-  borderRadius: "6px",
+  padding: "14px 12px",
+  borderRadius: "8px",
   border: "1px solid #d9d9d9",
-  fontSize: "15px",
-  marginBottom: "2px",
+  fontSize: "16px",
+  marginBottom: "6px",
   outline: "none",
   background: "#fafbfc",
   boxSizing: "border-box",
+  transition: "all 0.2s",
+  ":focus": {
+    borderColor: "#f82896",
+    boxShadow: "0 0 0 3px rgba(248, 40, 150, 0.1)",
+  }
 };
 
 const buttonStyle = {
   width: "100%",
-  padding: "12px",
-  background: "#1890ff",
+  padding: "14px",
+  background: "#f82896",
   color: "#fff",
   border: "none",
-  borderRadius: "6px",
+  borderRadius: "8px",
   fontWeight: "bold",
-  fontSize: "16px",
-  marginTop: "8px",
+  fontSize: "17px",
+  marginTop: "10px",
   cursor: "pointer",
   letterSpacing: "0.02em",
-  transition: "background 0.2s",
+  transition: "all 0.2s",
+  boxShadow: "0 4px 12px rgba(248, 40, 150, 0.2)",
 };
 
 const createAccountButtonStyle = {
   ...buttonStyle,
-  background: "#6c757d",
+  background: "#f82896",
+  opacity: 0.9,
   marginTop: "8px",
 };
 
@@ -84,13 +96,16 @@ function MemberLogin() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
       // Automatically append pseudo-email domain if missing
       const loginEmail = email.includes("@") ? email : email + "@byumember.com";
-      await signInWithEmailAndPassword(auth, loginEmail, password);
+      // Convert DD/MM/YYYY to DDMMYYYY for authentication
+      const passForAuth = password.replace(/\//g, "");
+      await signInWithEmailAndPassword(auth, loginEmail, passForAuth);
       navigate("/memberpage");
     } catch (err) {
       setError("Email atau tanggal lahir salah");
@@ -128,9 +143,25 @@ function MemberLogin() {
 
   return (
     <div style={containerStyle}>
-      <form style={formStyle} onSubmit={handleLogin} autoComplete="on">
+      <style>{`
+        html, body {
+          height: 100vh !important;
+          overflow: hidden !important;
+          margin: 0;
+          padding: 0;
+        }
+      `}</style>
+      <form style={formStyle} className="member-login-form" onSubmit={handleLogin} autoComplete="on">
+        <style>{`
+          @media (min-width: 600px) {
+            .member-login-form {
+              max-width: 400px !important;
+              padding: 32px 24px !important;
+            }
+          }
+        `}</style>
         <h2 style={{ textAlign: "center", fontWeight: 700, marginBottom: "10px", fontSize: "1.5rem" }}>
-          Login
+          Login Akun Byuties
         </h2>
         {error && <div style={errorStyle}>{error}</div>}
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -147,27 +178,62 @@ function MemberLogin() {
             style={inputStyle}
           />
         </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", position: "relative" }}>
           <label htmlFor="password" style={labelStyle}>
             Tanggal Lahir
           </label>
-          <input
-            id="password"
-            type="date"
-            autoComplete="current-password"
-            placeholder="Masukkan password"
-            value={displayDateValue()}
-            onChange={(e) => setPassword(convertDateToDDMMYYYY(e.target.value))}
-            style={inputStyle}
-          />
+          <div style={{ width: "100%" }}>
+            <input
+              id="password"
+              type="text"
+              autoComplete="current-password"
+              placeholder="DD/MM/YYYY"
+              value={password}
+              onChange={e => {
+                // Only allow numbers and /
+                let val = e.target.value.replace(/[^0-9/]/g, "");
+                // Auto-insert / as user types
+                if (val.length === 2 && password.length === 1) val += "/";
+                if (val.length === 5 && password.length === 4) val += "/";
+                // Keep value in DD/MM/YYYY format
+                setPassword(val);
+              }}
+              maxLength={10}
+              style={inputStyle}
+            />
+          </div>
         </div>
         <button type="submit" style={buttonStyle}>
           Login
         </button>
-        <button type="button" style={createAccountButtonStyle} onClick={handleCreateAccount}>
-          Create Account
-        </button>
+        <div style={{ textAlign: "center", marginTop: "12px" }}>
+          <span style={{ fontSize: "15px" }}>
+            Belum punya akun?{' '}
+            <a href="#" style={{ color: "#f82896", textDecoration: "underline", cursor: "pointer", fontWeight: 600 }}
+              onClick={e => { e.preventDefault(); navigate("/register"); }}>
+              Daftar
+            </a>
+          </span>
+        </div>
       </form>
+      <div style={{ marginTop: "16px", textAlign: "center" }}>
+        <a href="#" 
+          onClick={e => { e.preventDefault(); navigate("/"); }}
+          style={{ 
+            color: "#6c757d",
+            textDecoration: "none",
+            fontSize: "14px",
+            cursor: "pointer",
+            opacity: 0.8,
+            transition: "opacity 0.2s",
+            ":hover": {
+              opacity: 1
+            }
+          }}
+        >
+          Kembali ke Halaman Utama
+        </a>
+      </div>
     </div>
   );
 }

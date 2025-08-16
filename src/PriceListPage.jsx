@@ -11,7 +11,7 @@ export default function PriceListPage({withCart=false}) {
   const { cart, addToCart, updateQty, removeFromCart } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
-  const { namaKamu, nomorHandphone, searchValue } = location.state || {};
+  const { namaKamu, nomorHandphone, searchValue, showPromoFilter } = location.state || {};
   const [searchText, setSearchText] = useState(searchValue || "");
   const [data, setData] = useState([]);
   const [debouncedSearch] = useDebounce(searchText, 300);
@@ -19,7 +19,7 @@ export default function PriceListPage({withCart=false}) {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [showLauncherPopup, setShowLauncherPopup] = useState(false);
   const [popupOpacity, setPopupOpacity] = useState(0);
-  const [promoOnly, setPromoOnly] = useState(false);
+  const [promoOnly, setPromoOnly] = useState(showPromoFilter || false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -68,6 +68,20 @@ export default function PriceListPage({withCart=false}) {
       };
     }
   }, [selectedBrand]);
+
+  // Handle promo filter highlight when coming from "Cek Promo" button
+  useEffect(() => {
+    if (showPromoFilter) {
+      // Add visual feedback that the promo filter is on
+      const promoButton = document.querySelector('[data-promo-button="true"]');
+      if (promoButton) {
+        promoButton.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+          promoButton.style.transform = 'scale(1)';
+        }, 300);
+      }
+    }
+  }, [showPromoFilter]);
 
   const brandOptions = Array.from(new Set(data.map(item => item.Brand))).filter(Boolean);
 
@@ -311,6 +325,7 @@ export default function PriceListPage({withCart=false}) {
             <Button
               size="small"
               onClick={() => setPromoOnly(!promoOnly)}
+              data-promo-button="true"
               style={{
                 border: promoOnly ? "none" : "1px solid #52c41a",
                 color: "#52c41a",
@@ -321,7 +336,8 @@ export default function PriceListPage({withCart=false}) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16
+                marginRight: 16,
+                transition: "transform 0.3s ease-in-out"
               }}
             >
               <div

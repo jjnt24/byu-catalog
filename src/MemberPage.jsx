@@ -5,6 +5,22 @@ import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { db } from "./firebase";
 import { collection, doc, getDoc, getDocs, setDoc, query, orderBy } from "firebase/firestore";
 
+const containerStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  height: "100dvh", // Use dynamic viewport height for mobile browser bars
+  width: "100vw",
+  overflowY: "auto",
+  background: "#f7f9fb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "column",
+  padding: "0 8px",
+  boxSizing: "border-box",
+};
+
 export default function MemberPage() {
   const [memberName] = useState("Member Name");
   const [showOverlay, setShowOverlay] = useState(false);
@@ -111,6 +127,14 @@ export default function MemberPage() {
     }
   }, [socialMedias]);
 
+  useEffect(() => {
+    // Scroll to top after all content/data loads
+    const timeout = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, []);
+
 
   const addFavoriteBrand = () => {
     const trimmed = favoriteBrandInput.trim();
@@ -205,27 +229,7 @@ export default function MemberPage() {
     }
   }
   return (
-    <div
-      style={{
-        backgroundColor: "#fff",
-        width: "100%",
-        minHeight: "100vh",
-        overflowX: "hidden",
-        paddingTop: "100px", // Increased padding to ensure content is visible
-        paddingBottom: "32px",
-        paddingLeft: "16px",
-        paddingRight: "16px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        position: "fixed", // Keep the container fixed
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflowY: "auto", // Enable vertical scrolling
-      }}
-    >
+    <div style={containerStyle}>
       <div
         style={{
           width: "80px",

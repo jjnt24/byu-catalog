@@ -3,16 +3,10 @@ import ReactGA from "react-ga4";
 import "@fontsource/nunito";
 import { useNavigate } from "react-router-dom";
 
-const images = [
-  "/Shopping.png",
-  "/Detective.png",
-  "/Wearing Makeup.png"
-];
-
 const Landing = () => {
-  const [current, setCurrent] = useState(0);
   const [searchValue, setSearchValue] = useState("");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Handle window resize
   useEffect(() => {
@@ -24,25 +18,13 @@ const Landing = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [namaKamu, setNamaKamu] = useState("");
-  const [nomorHandphone, setNomorHandphone] = useState("");
+  const [namaKamu, setNamaKamu] = useState(() => sessionStorage.getItem("byusoulNama") || "");
+  const [nomorHandphone, setNomorHandphone] = useState(() => sessionStorage.getItem("byusoulNomor") || "");
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const [showPromoBar, setShowPromoBar] = useState(false);
+  const [fromPromoButton, setFromPromoButton] = useState(false);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowPromoBar(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleLihatProduk = () => {
     ReactGA.event({
@@ -69,72 +51,59 @@ const Landing = () => {
 
     if (!valid) return;
 
+    // Save to session storage
+    sessionStorage.setItem("byusoulNama", namaKamu);
+    sessionStorage.setItem("byusoulNomor", nomorHandphone);
+
     navigate("/catalog", {
       state: {
         namaKamu,
         nomorHandphone,
-        searchValue // pass the Landing search input
+        searchValue, // pass the Landing search input
+        showPromoFilter: fromPromoButton // indicate if we should show promo items
       }
     });
     setShowLoginPopup(false);
+    setFromPromoButton(false); // Reset after navigation
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: "#f5f5f5",
+    <div style={{ position: "relative" }}>
+      {/* Logo */}
+      <img
+        src="/LogoTransparan.png"
+        alt="Byusoul Logo"
+        style={{
+          position: "fixed",
+          top: isDesktop ? "32px" : "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: isDesktop ? "150px" : "120px",
+          height: "auto",
+          zIndex: 100
+        }}
+      />
+      <div
+        style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        height: "100dvh", // Use dynamic viewport height
+        width: "100vw",
+        backgroundColor: "white",
         color: "#000",
-        minHeight: "100vh",
-        height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: isDesktop ? "center" : "flex-start",
+        justifyContent: "center",
         alignItems: "center",
         fontFamily: "'Nunito', sans-serif",
-        padding: isDesktop ? "0 32px" : "0 16px",
-        position: "relative",
-        overflow: "hidden",
-        paddingTop: showPromoBar ? (isDesktop ? "60px" : "80px") : "20px",
-        paddingBottom: "60px",
+        padding: isDesktop ? "32px" : "16px",
+        boxSizing: "border-box",
+        overflowX: "hidden",
+        overflowY: "auto" // Allow scrolling while maintaining fixed positioning
       }}
     >
-      {showPromoBar && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            backgroundColor: "#f82896ff",
-            color: "#fff",
-            textAlign: "center",
-            padding: "10px",
-            zIndex: 2000,
-            fontWeight: "bold",
-            fontStyle: "italic",
-            fontSize: "12px",
-            lineHeight: 1.4,
-            animation: "slideDown 0.5s ease-out",
-            boxSizing: "border-box",
-            maxHeight: "60px",
-            display: "-webkit-box",
-            "-webkit-line-clamp": "2",
-            "-webkit-box-orient": "vertical",
-            overflow: "hidden"
-          }}
-        >
-          GRATIS ONGKIR UNTUK PENGANTARAN 8KM DARI TAMAN SISWA | FOLLOW INSTAGRAM {" "}
-          <a
-            href="https://www.instagram.com/byusoul_id/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#fff", textDecoration: "underline", fontWeight: "bold", fontStyle: "italic" }}
-          >
-            @byusoul_id
-          </a>{" "}
-          UNTUK INFO LAINNYA
-        </div>
-      )}
+
       <style>
         {`
           @keyframes float {
@@ -142,58 +111,94 @@ const Landing = () => {
             50% { transform: translateY(-5px); }
           }
 
-          @keyframes slideDown {
-            0% { transform: translateY(-100%); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          html, body {
+            height: 100dvh !important;
+            overflow: hidden !important;
+            margin: 0;
+            padding: 0;
+          }
+
+          #root {
+            height: 100dvh;
+            width: 100vw;
+            background-color: #f5f5f5;
+            overflow: hidden;
+          }
+
+          @media screen and (max-height: 700px) {
+            body {
+              overflow-y: auto !important;
+            }
+          }
+
+          @media screen and (min-width: 1200px) {
+            .landing-container {
+              max-width: 1200px;
+              margin: 0 auto;
+            }
           }
         `}
       </style>
-      <div style={{ 
-          position: "relative", 
-          width: "100%", 
-          maxWidth: isDesktop ? "500px" : "400px", 
-          height: isDesktop ? "300px" : "200px", 
+      <div style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           marginBottom: isDesktop ? "24px" : "16px",
-          aspectRatio: "4/3",
         }}>
-        {images.map((img, idx) => (
-          <img
-            key={idx}
-            src={img}
-            alt=""
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              borderRadius: "12px",
-              opacity: current === idx ? 1 : 0,
-              transition: "opacity 1s ease-in-out",
-              filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
-            }}
-          />
-        ))}
+        <img
+          src="/Kucing Happy.png"
+          alt="Kucing Happy"
+          style={{
+            width: isDesktop ? "320px" : "260px",
+            height: "auto",
+            objectFit: "contain",
+            filter: "drop-shadow(0 -15px 20px rgba(248, 40, 150, 0.15))",
+            transform: "translateZ(0)",
+            position: "absolute",
+            top: isDesktop ? "-40px" : "-30px",
+            zIndex: 1,
+          }}
+        />
+        <h1 style={{ 
+            textAlign: "center", 
+            margin: "0 10px",
+            fontWeight: 900,
+            fontSize: isDesktop ? "48px" : "40px",
+            lineHeight: 1.1,
+            maxWidth: isDesktop ? "800px" : "100%",
+            letterSpacing: "-0.02em",
+            color: "#000",
+            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            position: "relative",
+            zIndex: 2,
+            marginTop: isDesktop ? "220px" : "180px", // Adjust based on image height
+            transform: "translateZ(0)",
+            fontFamily: "Nunito, sans-serif",
+            fontWeight: 900
+        }}>
+          Welcome to Byusoul!
+        </h1>
       </div>
-      
-      <h1 style={{ 
-          textAlign: "center", 
-          margin: "0 10px", 
-          marginBottom: isDesktop ? "24px" : "16px", 
-          fontWeight: 900,
-          fontSize: isDesktop ? "32px" : "24px",
-          lineHeight: 1.3,
-          maxWidth: isDesktop ? "800px" : "100%",
-        }}>
-        Selamat Datang di Byusoul Cosmetics!
-      </h1>
       <div style={{ width: "100%", maxWidth: "400px", position: "relative", marginBottom: "20px" }}>
         <input
           type="text"
           placeholder="Lagi cari produk apa, Byuties?"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
           style={{
             width: "100%",
             padding: "12px 70px 12px 16px", // adjust right padding for button
@@ -204,6 +209,8 @@ const Landing = () => {
             boxSizing: "border-box",
             backgroundColor: "#fff",
             color: "#000",
+            transition: "all 0.3s ease",
+            boxShadow: isSearchFocused ? "0 0 10px rgba(248, 40, 150, 0.2)" : "none",
           }}
         />
         <button
@@ -230,15 +237,198 @@ const Landing = () => {
             ReactGA.event({
               category: "Landing Page",
               action: "Click Cari Button",
-              label: "Open Login Popup"
+              label: "Navigate or Open Login Popup"
             });
-            setShowLoginPopup(true);
+            setFromPromoButton(false);
+            
+            // If we have stored user info, navigate directly
+            if (sessionStorage.getItem("byusoulNama") && sessionStorage.getItem("byusoulNomor")) {
+              navigate("/catalog", {
+                state: {
+                  namaKamu: sessionStorage.getItem("byusoulNama"),
+                  nomorHandphone: sessionStorage.getItem("byusoulNomor"),
+                  searchValue,
+                  showPromoFilter: false
+                }
+              });
+            } else {
+              setShowLoginPopup(true);
+            }
           }}
         >
           Cari
         </button>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", rowGap: "20px", justifyContent: "center" }}>
+      {/* Action Buttons */}
+      <style>{`
+        @keyframes shine {
+          0% {
+            background-position: 200% center;
+          }
+          100% {
+            background-position: -200% center;
+          }
+        }
+        .login-button {
+          font-family: "Nunito", sans-serif !important;
+          background: linear-gradient(
+            90deg, 
+            #f82896 21%, 
+            #ff4bab 24%, 
+            #f82896 27%,
+            #f82896 100%
+          );
+          background-size: 200% auto;
+          animation: shine 5s linear infinite;
+        }
+        .login-button span {
+          background: linear-gradient(
+            90deg,
+            #fff 40%,
+            #ffe1ee 45%,
+            #fff 50%,
+            #fff 100%
+          );
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-size: 200% auto;
+          animation: shine 5s linear infinite;
+          display: inline-block;
+        }
+      `}</style>
+      {/* User info badge */}
+      <div style={{
+        position: "fixed",
+        top: isDesktop ? "100px" : "85px", // Position below logo
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 99,
+        width: "auto",
+        minWidth: isDesktop ? "200px" : "180px",
+      }}>
+        {sessionStorage.getItem("byusoulNama") && (
+          <div style={{
+            backgroundColor: "#fee4f1",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            fontSize: "14px",
+            color: "#f82896",
+            boxShadow: "0 2px 4px rgba(248, 40, 150, 0.1)",
+            animation: "fadeIn 0.3s ease-out",
+            whiteSpace: "nowrap"
+          }}>
+            <span style={{ fontSize: "16px" }}>👋</span>
+            <span>Welcome back, <strong>{sessionStorage.getItem("byusoulNama")}</strong></span>
+          </div>
+        )}
+      </div>
+      <div style={{
+        width: "100%",
+        maxWidth: "400px",
+        display: isSearchFocused ? "none" : "flex",
+        gap: "8px",
+        marginTop: "2px",
+      }}>
+        <button
+          onClick={() => navigate('/memberlogin')}
+          className="login-button"
+          style={{
+            flex: 1,
+            height: "70px",
+            padding: "8px",
+            borderRadius: "20px",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: "15px",
+            fontFamily: '"Nunito", sans-serif',
+            fontWeight: 900,
+            boxShadow: "0 4px 12px rgba(248, 40, 150, 0.3)",
+            transition: "transform 0.2s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          <span>👑 Byuties Login</span>
+        </button>
+        <button
+          onClick={() => {
+            ReactGA.event({
+              category: "Landing Page",
+              action: "Click Cek Promo",
+              label: "Navigate or Open Login Popup"
+            });
+            setFromPromoButton(true);
+            
+            // If we have stored user info, navigate directly
+            if (sessionStorage.getItem("byusoulNama") && sessionStorage.getItem("byusoulNomor")) {
+              navigate("/catalog", {
+                state: {
+                  namaKamu: sessionStorage.getItem("byusoulNama"),
+                  nomorHandphone: sessionStorage.getItem("byusoulNomor"),
+                  searchValue,
+                  showPromoFilter: true
+                }
+              });
+            } else {
+              setShowLoginPopup(true);
+            }
+          }}
+          style={{
+            flex: 1,
+            height: "70px",
+            padding: "8px",
+            borderRadius: "20px",
+            border: "none",
+            backgroundColor: "white",
+            color: "#333",
+            cursor: "pointer",
+            fontSize: "15px",
+            fontWeight: "600",
+            transition: "all 0.2s",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          Cek Promo
+        </button>
+      </div>
+      <div style={{ 
+        display: isSearchFocused ? "flex" : "none",
+        flexWrap: "wrap", 
+        gap: "10px", 
+        rowGap: "20px", 
+        justifyContent: "center"
+      }}>
+        <style>{`
+          @keyframes popIn {
+            0% { 
+              opacity: 0; 
+              transform: scale(0.5); 
+            }
+            70% { 
+              transform: scale(1.1); 
+            }
+            100% { 
+              opacity: 1; 
+              transform: scale(1); 
+            }
+          }
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+          }
+        `}</style>
         {["Lip","Sunscreen","Face Wash","Azarine","Mykonos","Glad2Glow","Anting","Bando","Slavina","Facetology","Pinkflash","Skin1004"].map((item, idx) => (
           <div
             key={idx}
@@ -252,7 +442,10 @@ const Landing = () => {
               cursor: "pointer",
               fontSize: "14px",
               boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-              animation: `float 3s ease-in-out ${0.2 * idx}s infinite`,
+              opacity: 0,
+              animation: isSearchFocused ? 
+                `popIn 0.3s ${idx * 0.05}s forwards, float 3s ease-in-out ${0.2 * idx}s infinite` : 
+                "none",
             }}
           >
             {item}
@@ -260,7 +453,7 @@ const Landing = () => {
         ))}
       </div>
 
-      {/* Move informational texts here */}
+      {/* Store location */}
       <div style={{ marginTop: "20px", textAlign: "center", fontSize: "14px", lineHeight: "1.5" }}>
         <div>
           Lokasi Store Byusoul:{" "}
@@ -273,7 +466,22 @@ const Landing = () => {
             Byusoul Taman Siswa
           </a>
         </div>
-        <div>Coming Soon: Program Membership Byusoul</div>
+      </div>
+
+      {/* Version number - positioned at bottom */}
+      <div style={{ 
+          position: "fixed",
+          bottom: isDesktop ? "24px" : "16px",
+          left: 0,
+          width: "100%",
+          textAlign: "center", 
+          color: "#888", 
+          fontSize: "12px",
+          padding: "10px 16px",
+          boxSizing: "border-box",
+          zIndex: 90,
+      }}>
+        Versi 1.1
       </div>
 
       {showLoginPopup && (
@@ -317,9 +525,20 @@ const Landing = () => {
             >
               ×
             </button>
-            <h2 style={{ textAlign: "left", marginBottom: "10px" }}>
+            <h2 style={{ textAlign: "left", marginBottom: "4px" }}>
               Data Pemesan
             </h2>
+            <div style={{
+              fontSize: "12px",
+              color: "#666",
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}>
+              <span style={{ color: "#f82896" }}>🔒</span>
+              Information will be saved for this session
+            </div>
             <input
               type="text"
               placeholder="Nama"
@@ -372,14 +591,6 @@ const Landing = () => {
           </div>
         </div>
       )}
-      <div style={{ position: "absolute", bottom: "10px", width: "100%", textAlign: "center", color: "#888", fontSize: "12px" }}>
-        Versi 1.0.1
-        <span
-          style={{ color: "#888", textDecoration: "underline", cursor: "pointer", marginLeft: "6px" }}
-          onClick={() => navigate('/memberlogin')}
-        >
-          | Member Login
-        </span>
       </div>
     </div>
   );
