@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { auth } from './firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, EmailAuthProvider, linkWithCredential } from 'firebase/auth';
-import { getFirestore, collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { RecaptchaVerifier, signInWithPhoneNumber, EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword, fetchSignInMethodsForEmail, updateProfile, PhoneAuthProvider, updatePassword, updateEmail } from 'firebase/auth';
+import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useNavigate } from 'react-router-dom';
 
 function MemberRegister() {
@@ -15,11 +16,24 @@ function MemberRegister() {
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [otpSentMessage, setOtpSentMessage] = useState('');
-  const [showOtpInput, setShowOtpInput] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
-  const [otpCooldown, setOtpCooldown] = useState(0);
   const [loadingOtp, setLoadingOtp] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  // Claim account state
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claimPhone, setClaimPhone] = useState('');
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimResult, setClaimResult] = useState(null); // null | 'notfound' | { ...data }
+  // Track if registration is from claim and the claimed phone number
+  const [registerFromClaim, setRegisterFromClaim] = useState(false);
+  const [claimedPhone, setClaimedPhone] = useState('');
+
+  // Add state to track signed-in user for claim flow
+  const [claimSignedInUser, setClaimSignedInUser] = useState(null);
+
+  const functions = getFunctions();
 
   const sendOtp = () => {
     if (!phoneNumber) {
@@ -32,7 +46,8 @@ function MemberRegister() {
       .then((confirmationResult) => {
         console.log('OTP sent!');
         setOtpSentMessage('Kode 6 digit sudah dikirim ke SMS');
-        setShowOtpInput(true);
+        setShowOtpVerification(true);
+        setShowRegisterForm(false);
         window.confirmationResult = confirmationResult; // Store for verification
         setLoadingOtp(false);
       })
@@ -62,7 +77,7 @@ function MemberRegister() {
     }
   };
 
-  const handleGetOtpClick = async () => {
+  const handleLanjutClick = async () => {
     setButtonPressed(true);
     setTimeout(() => setButtonPressed(false), 150);
     setShowRecaptcha(true);
@@ -72,7 +87,6 @@ function MemberRegister() {
       try {
         await recaptchaVerifierRef.current.verify(); // triggers the invisible reCAPTCHA
         // callback will run automatically after successful verification
-        setOtpCooldown(60);
       } catch (error) {
         console.error("reCAPTCHA verification failed:", error);
         setLoadingOtp(false);
@@ -83,238 +97,604 @@ function MemberRegister() {
   };
 
   useEffect(() => {
-    if (otpCooldown === 0) return;
-    const timerId = setInterval(() => {
-      setOtpCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerId);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, [otpCooldown]);
-
-  useEffect(() => {
     // Removed initialization from here to only initialize on button click
   }, []);
 
+  // Handle OTP input as 6 separate digits (refactored)
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return; // only allow digits
+
+    // Convert otpCode to array of 6 elements
+    let otpArray = otpCode.split('');
+    while (otpArray.length < 6) otpArray.push('');
+    otpArray[index] = value;
+    // Only keep first 6
+    otpArray = otpArray.slice(0, 6);
+    setOtpCode(otpArray.join(''));
+
+    // Auto focus next input if value entered and not last index
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+
+    // If all 6 digits are filled, auto verify
+    if (otpArray.every(d => d.length === 1)) {
+      const newOtp = otpArray.join('');
+      if (!newOtp) {
+        console.error('OTP code is required');
+        return;
+      }
+      handleOtpVerification(newOtp, phoneNumber, dateOfBirth, name);
+    }
+  };
+
+  // OTP verification handler
+  const handleOtpVerification = async (newOtp, phoneNumber, dateOfBirth, name) => {
+    if (!window.confirmationResult) {
+      console.error('No OTP request has been made yet');
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      // For claim flow: user is already signed in, just link phone credential
+      if (registerFromClaim && claimSignedInUser) {
+        // Get phone credential from the OTP
+        let phoneCredential = null;
+        try {
+          phoneCredential = window.confirmationResult.verificationId
+            ? PhoneAuthProvider.credential(
+                window.confirmationResult.verificationId,
+                newOtp
+              )
+            : null;
+          if (phoneCredential) {
+            await linkWithCredential(claimSignedInUser, phoneCredential);
+          }
+        } catch (err) {
+          if (err.code !== "auth/credential-already-in-use") {
+            setVerifyingOtp(false);
+            setSuccessMessage('');
+            console.error('Gagal menghubungkan nomor HP ke akun lama. Silakan hubungi admin.\n' + (err.message || ''));
+            return;
+          }
+        }
+        // Optionally update profile
+        await updateProfile(claimSignedInUser, { displayName: name });
+        // Store/update Firestore data
+        const localPhone = phoneNumber.replace(/^\+62/, '0');
+        await setDoc(doc(db, 'MemberData', claimSignedInUser.uid), {
+          name: name,
+          birthDate: dateOfBirth,
+          phoneNumber: phoneNumber,
+          localPhone: localPhone
+        }, { merge: true });
+
+        // --- Change password to birth date in DDMMYYYY format ---
+        const parts = dateOfBirth.split('-'); // ["YYYY","MM","DD"]
+        const newPassword = parts[2] + parts[1] + parts[0]; // DDMMYYYY
+        if (newPassword && newPassword.length >= 6) {
+          try {
+            await updatePassword(claimSignedInUser, newPassword);
+            console.log('Password updated to birth date (DDMMYYYY)');
+          } catch (err) {
+            console.error('Gagal mengubah password ke tanggal lahir. Silakan hubungi admin.\n' + (err.message || ''));
+          }
+        } else {
+          console.error('Format tanggal lahir tidak valid untuk password.');
+        }
+        // --- End password change ---
+
+        setVerifyingOtp(false);
+        setSuccessMessage('Akun berhasil diklaim, nomor HP terhubung, dan password diubah!');
+        return;
+      }
+
+      // --- NEW ACCOUNT REGISTRATION LOGIC ---
+      // 1. Confirm OTP to sign in the user
+      const userCredential = await window.confirmationResult.confirm(newOtp);
+      const user = userCredential.user;
+
+      // 2. Prepare pseudoEmail and password
+      const localPhone = phoneNumber.replace(/^\+62/, '0');
+      const pseudoEmail = localPhone + "@byumember.com";
+      // Generate password from birth date
+      const parts = dateOfBirth.split('-'); // ["YYYY","MM","DD"]
+      const password = parts[2] + parts[1] + parts[0]; // DDMMYYYY
+
+      // 3. Link pseudo-email/password to phone user
+      const credential = EmailAuthProvider.credential(pseudoEmail, password);
+      try {
+        await linkWithCredential(user, credential);
+        // After successful link, update email explicitly
+        try {
+          await updateEmail(user, pseudoEmail);
+        } catch (emailError) {
+          console.log('Email update failed, but account still created:', emailError);
+          // Non-blocking error - continue with account creation
+        }
+      } catch (error) {
+        if (error.code === "auth/credential-already-in-use") {
+          // Already linked, ignore
+        } else {
+          setVerifyingOtp(false);
+          setSuccessMessage('');
+          console.error('Gagal menghubungkan email ke akun baru. Silakan hubungi admin.\n' + (error.message || ''));
+          return;
+        }
+      }
+      // For new accounts, set the creation date
+      await setDoc(doc(db, 'MemberData', user.uid), {
+        name: name,
+        birthDate: dateOfBirth,
+        phoneNumber: phoneNumber,
+        localPhone: localPhone,
+        accountCreationDate: new Date() // Add creation timestamp for new accounts
+      }, { merge: true });
+      setVerifyingOtp(false);
+      setSuccessMessage('Akun baru berhasil dibuat!');
+    } catch (error) {
+      console.error('Error verifying OTP or linking:', error);
+      setVerifyingOtp(false);
+      setSuccessMessage('');
+      console.error('Gagal verifikasi OTP atau pembuatan akun. Silakan coba lagi atau hubungi admin.\n' + (error.message || ''));
+    }
+  };
+
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2', color: '#000' }}>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes fade {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        .otp-input-container {
-          position: relative;
-          width: 100%;
-          margin-bottom: 10px;
-        }
-        .otp-spinner {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 16px;
-          height: 16px;
-          border: 2px solid #ccc;
-          border-top: 2px solid #333;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-        .otp-sent-message {
-          animation: fade 1.5s ease-in-out 0s 5;
-          color: #000;
-          margin-bottom: 10px;
-        }
-        .pressed-button {
-          transform: scale(0.95);
-          box-shadow: 0 2px 6px rgba(248, 40, 150, 0.6);
-        }
-        .phone-input-container {
-          position: relative;
-          flex: 1;
-        }
-        .phone-input-spinner {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 16px;
-          height: 16px;
-          border: 2px solid #ccc;
-          border-top: 2px solid #333;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          pointer-events: none;
-        }
-      `}</style>
-      <div style={{ padding: '30px 20px', border: '1px solid #ccc', borderRadius: 12, width: '90%', maxWidth: 400, boxSizing: 'border-box', backgroundColor: '#fff', color: '#000' }}>
-        <h2>Daftar Member Byu</h2>
-        <label style={{ marginBottom: 12 }}>Nama</label>
-        <input
-          type="text"
-          placeholder="Masukkan Nama"
-          style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <label style={{ marginBottom: 12 }}>Tanggal Lahir</label>
-        <input
-          type="date"
-          placeholder="Pilih Tanggal Lahir"
-          style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
-          value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
-        />
-        <label style={{ marginBottom: 12 }}>Nomor HP Aktif</label>
-        <div style={{ display: 'flex', marginBottom: 16, alignItems: 'center' }}>
-          <span style={{ padding: '6px 10px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px 0 0 4px', fontSize: '0.85rem', userSelect: 'none', flexShrink: 0, color: '#000', backgroundColor: '#fff' }}>+62</span>
-          <div className="phone-input-container">
-            <input
-              type="tel"
-              placeholder="Masukkan Nomor HP"
-              style={{ width: '100%', marginRight: 6, fontSize: '0.85rem', padding: '6px', borderRadius: '0 4px 4px 0', borderLeft: 'none', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc' }}
-              value={phoneNumber.startsWith('+62') ? phoneNumber.slice(3) : phoneNumber}
-              onChange={(e) => {
-                let val = e.target.value;
-                // Remove any leading +62 or 62
-                val = val.replace(/^(\+62|62)/, '');
-                // Remove any leading 0, since +62 is already there
-                val = val.replace(/^0+/, '');
-                setPhoneNumber('+62' + val);
-              }}
-            />
-            {loadingOtp && <div className="phone-input-spinner"></div>}
-          </div>
-          <button 
-            onClick={handleGetOtpClick} 
-            disabled={otpCooldown > 0 || successMessage !== ''}
-            style={{ 
-              fontSize: '0.85rem', 
-              backgroundColor: '#f82896ff', 
-              color: 'white', 
-              border: 'none', 
-              padding: '6px 12px', 
-              cursor: otpCooldown > 0 || successMessage !== '' ? 'not-allowed' : 'pointer', 
-              flexShrink: 0,
-              transition: 'transform 0.1s ease, box-shadow 0.1s ease',
-              ...(buttonPressed ? { transform: 'scale(0.95)', boxShadow: '0 2px 6px rgba(248, 40, 150, 0.6)' } : {})
-            }}
-          >
-            {otpCooldown > 0 ? `Kirim Lagi (${otpCooldown}s)` : 'Kirim OTP'}
-          </button>
-        </div>
-        {otpSentMessage && <div className="otp-sent-message">{otpSentMessage}</div>}
-        {showOtpInput && (
-          <>
-            <div className="otp-input-container">
+      {/* CLAIM FORM BLOCK */}
+      {showClaimForm && (
+        <>
+          <style>{`
+            .claim-spinner {
+              margin-top: 8px;
+              width: 20px;
+              height: 20px;
+              border: 3px solid #ccc;
+              border-top: 3px solid #f82896ff;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin-left: auto;
+              margin-right: auto;
+            }
+          `}</style>
+          <div style={{ padding: 30, border: '1px solid #ccc', borderRadius: 12, backgroundColor: '#fff', textAlign: 'center', width: '90%', maxWidth: 400 }}>
+            <h2>Klaim Akun Byu</h2>
+            <div style={{ marginTop: 24, textAlign: 'left' }}>
+              <label style={{ marginBottom: 8, display: 'block', fontWeight: 500 }}>Nomor Handphone</label>
               <input
-                type="text"
-                placeholder="Masukkan OTP"
-                style={{ width: '100%', padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
-                value={otpCode}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setOtpCode(val);
-                  if (val.length === 6) {
-                    if (!val) {
-                      console.error('OTP code is required');
-                      return;
-                    }
-                    if (window.confirmationResult) {
-                      setVerifyingOtp(true);
-                      window.confirmationResult.confirm(val)
-                        .then((result) => {
-                          console.log('User signed in successfully:', result.user);
-                          setSuccessMessage('Verifikasi Berhasil! Silakan login ulang untuk mengakses akun kamu');
-                          const localPhone = phoneNumber.replace(/^\+62/, '0');
-                          const pseudoEmail = localPhone + "@byumember.com";
-                          // Format password as DDMMYYYY from dateOfBirth using manual parsing
-                          const parts = dateOfBirth.split('-'); // ["YYYY","MM","DD"]
-                          const password = parts[2] + parts[1] + parts[0]; // DDMMYYYY
-                          const credential = EmailAuthProvider.credential(pseudoEmail, password);
-                          linkWithCredential(result.user, credential)
-                            .then((usercred) => {
-                              console.log("Pseudo-email linked to phone-auth user:", usercred.user.uid);
-                            })
-                            .catch((error) => {
-                              if (error.code === "auth/credential-already-in-use") {
-                                console.log("Pseudo-email already linked to another account");
-                              } else {
-                                console.error("Error linking pseudo-email credential:", error);
-                              }
-                            });
-                          setDoc(doc(db, 'MemberData', result.user.uid), {
-                            name: name,
-                            birthDate: dateOfBirth,
-                            phoneNumber: phoneNumber,
-                            localPhone: localPhone
-                          })
-                          .then(() => {
-                            console.log('User data stored in Firestore');
-                            // Read back to verify
-                            import('firebase/firestore').then(({ getDoc }) => {
-                              getDoc(doc(db, 'MemberData', result.user.uid)).then((docSnap) => {
-                                if (docSnap.exists()) {
-                                  console.log('Firestore document data:', docSnap.data());
-                                } else {
-                                  console.log('No such document in Firestore');
-                                }
-                              }).catch((error) => {
-                                console.error('Error reading back Firestore data:', error);
-                              });
-                            });
-                          })
-                          .catch((error) => {
-                            console.error('Error storing user data:', error);
-                          });
-                          setVerifyingOtp(false);
-                        })
-                        .catch((error) => {
-                          console.error('Error verifying OTP:', error);
-                          setVerifyingOtp(false);
-                        });
-                    } else {
-                      console.error('No OTP request has been made yet');
-                    }
-                  }
+                type="tel"
+                placeholder="Masukkan nomor HP (08xxxx atau +628xxxx)"
+                value={claimPhone}
+                onChange={e => setClaimPhone(e.target.value)}
+                style={{
+                  width: '100%',
+                  marginBottom: 16,
+                  padding: '8px',
+                  backgroundColor: '#fff',
+                  color: '#000',
+                  border: '1px solid #ccc',
+                  borderRadius: 4
                 }}
               />
-              {verifyingOtp && <div className="otp-spinner"></div>}
             </div>
-          </>
-        )}
-        <button
-          onClick={() => {
-            navigate('/memberlogin');
-          }}
-          style={{
-            width: '100%',
-            marginBottom: 16,
-            backgroundColor: '#f82896ff',
-            color: 'white',
-            border: 'none',
-            padding: '6px 0', // Reduced padding for smaller button
-            fontSize: '0.9rem', // Smaller font size
-            cursor: 'pointer'
-          }}
-        >
-          Kembali ke Login
-        </button>
-        {successMessage && (
-          <div style={{ color: 'green', marginBottom: 10 }}>
-            {successMessage}
+            <button
+              onClick={async () => {
+                setClaimLoading(true);
+                setClaimResult(null);
+                // Phone normalization for claim form:
+                // 1. If input is +62xxxxxxxxxx, convert to 0xxxxxxxxxx.
+                // 2. If input is 0xxxxxxxxxx, keep as is (just trim spaces).
+                // Any other format: trim spaces and try best effort.
+                function normalizePhone(str) {
+                  let s = str.trim();
+                  // Remove all spaces
+                  s = s.replace(/\s+/g, '');
+                  // If starts with +62, replace with 0
+                  if (s.startsWith('+62')) {
+                    return '0' + s.slice(3);
+                  }
+                  // If starts with 0 and length 11-13, keep as is (just trim)
+                  if (/^0\d{9,12}$/.test(s)) {
+                    return s;
+                  }
+                  // Fallback: just return trimmed string
+                  return s;
+                }
+                const localPhone = normalizePhone(claimPhone);
+                console.log('[Cek Akun] Searched phone:', localPhone);
+                // Convert phone to pseudo-email
+                const pseudoEmail = localPhone + "@byumember.com";
+                const password = localPhone;
+                try {
+                  // Use Firebase Auth to sign in with email and password
+                  const { signInWithEmailAndPassword } = await import('firebase/auth');
+                  const userCredential = await signInWithEmailAndPassword(auth, pseudoEmail, password);
+                  setClaimResult({ UID: userCredential.user.uid });
+                } catch (err) {
+                  // If login fails, treat as not found
+                  setClaimResult('notfound');
+                }
+                setClaimLoading(false);
+              }}
+              disabled={claimLoading || !claimPhone}
+              style={{
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '12px 0',
+                fontSize: '1rem',
+                cursor: claimLoading || !claimPhone ? 'not-allowed' : 'pointer',
+                borderRadius: 6,
+                width: '100%',
+                fontWeight: 500,
+                marginBottom: 0
+              }}
+            >
+              Cek Akun
+            </button>
+            {claimLoading && <div className="claim-spinner"></div>}
+            {claimResult === 'notfound' && (
+              <div style={{ color: '#f82896ff', marginTop: 16, fontWeight: 500 }}>
+                Akun tidak ditemukan.
+              </div>
+            )}
+            {claimResult && claimResult !== 'notfound' && (
+              <div style={{ color: '#333', marginTop: 16, fontWeight: 500 }}>
+                Akun ditemukan. Poin Byu anda sebesar: <b>0 poin</b>.{' '}
+                <button
+                  onClick={async () => {
+                    // 1. Hide claim form
+                    setShowClaimForm(false);
+                    // 2. Show register form
+                    setShowRegisterForm(true);
+                    // 3. Pre-fill phone number with claimed phone
+                    function toPlus62Format(str) {
+                      let s = str.trim().replace(/\s+/g, '');
+                      if (s.startsWith('+62')) return s;
+                      if (s.startsWith('0')) return '+62' + s.slice(1);
+                      if (!s.startsWith('+')) return '+62' + s;
+                      return s;
+                    }
+                    const plus62Phone = toPlus62Format(claimPhone);
+                    setPhoneNumber(plus62Phone);
+                    setRegisterFromClaim(true);
+                    setClaimedPhone(plus62Phone);
+
+                    // 4. Sign out any current user before claim sign-in
+                    try {
+                      await auth.signOut();
+                    } catch (e) {
+                      // ignore signout error
+                    }
+                    // 5. Sign in with pseudo-email and password (phone number)
+                    //    and store the user for linking after OTP
+                    function normalizePhone(str) {
+                      let s = str.trim();
+                      s = s.replace(/\s+/g, '');
+                      if (s.startsWith('+62')) return '0' + s.slice(3);
+                      if (/^0\d{9,12}$/.test(s)) return s;
+                      return s;
+                    }
+                    const localPhone = normalizePhone(claimPhone);
+                    const pseudoEmail = localPhone + "@byumember.com";
+                    const password = localPhone;
+                    try {
+                      const { signInWithEmailAndPassword } = await import('firebase/auth');
+                      const userCredential = await signInWithEmailAndPassword(auth, pseudoEmail, password);
+                      setClaimSignedInUser(userCredential.user);
+                    } catch (err) {
+                      setClaimSignedInUser(null);
+                      console.error('Gagal login ke akun lama. Silakan hubungi admin.\n' + (err.message || ''));
+                    }
+                  }}
+                  style={{
+                    display: 'inline-block',
+                    background: 'none',
+                    border: 'none',
+                    color: '#f82896ff',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    padding: 0,
+                    marginLeft: 4
+                  }}
+                >
+                  Klaim sekarang
+                </button>
+                {/* Optionally display UID for debugging/internal use */}
+                {claimResult.UID && (
+                  <span style={{ display: 'none' }}>
+                    {console.log('[DEBUG] Firestore UID:', claimResult.UID)}
+                  </span>
+                )}
+              </div>
+            )}
+            <button
+              onClick={() => {
+                setShowClaimForm(false);
+                setClaimPhone('');
+                setClaimResult(null);
+                setClaimLoading(false);
+              }}
+              style={{
+                width: '100%',
+                marginTop: 16,
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '6px 0',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                borderRadius: 6
+              }}
+            >
+              Kembali
+            </button>
           </div>
-        )}
-        <div id="recaptcha-container" style={{ marginTop: 20, display: showRecaptcha ? 'block' : 'none' }}></div>
-      </div>
+        </>
+      )}
+
+      {/* WELCOME SCREEN */}
+      {!showClaimForm && !showRegisterForm && !showOtpVerification ? (
+        <div style={{ padding: 30, border: '1px solid #ccc', borderRadius: 12, backgroundColor: '#fff', textAlign: 'center', width: '90%', maxWidth: 400 }}>
+          <h2>Selamat Datang!</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}>
+            <button
+              onClick={() => { setShowClaimForm(true); }}
+              style={{
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '12px 0',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                borderRadius: 6,
+                width: '100%',
+                marginBottom: 0,
+                fontWeight: 500
+              }}
+            >
+              Sudah, klaim akun saya
+            </button>
+            <button
+              onClick={() => setShowRegisterForm(true)}
+              style={{
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '12px 0',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                borderRadius: 6,
+                width: '100%',
+                fontWeight: 500
+              }}
+            >
+              Belum, buatkan akun baru
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showRegisterForm && !showOtpVerification && (
+        <>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            .otp-spinner {
+              position: absolute;
+              right: 10px;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 16px;
+              height: 16px;
+              border: 2px solid #ccc;
+              border-top: 2px solid #333;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            }
+            .pressed-button {
+              transform: scale(0.95);
+              box-shadow: 0 2px 6px rgba(248, 40, 150, 0.6);
+            }
+          `}</style>
+          <div style={{ padding: '30px 20px', border: '1px solid #ccc', borderRadius: 12, width: '90%', maxWidth: 400, boxSizing: 'border-box', backgroundColor: '#fff', color: '#000' }}>
+            <h2>Daftar Member Byu</h2>
+            <label style={{ marginBottom: 12, display: 'block' }}>Nama</label>
+            <input
+              type="text"
+              placeholder="Masukkan Nama"
+              style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <label style={{ marginBottom: 12, display: 'block' }}>Tanggal Lahir</label>
+            <input
+              type="date"
+              placeholder="Pilih Tanggal Lahir"
+              style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
+            <label style={{ marginBottom: 12, display: 'block' }}>Nomor HP Aktif</label>
+            <input
+              type="tel"
+              placeholder="Masukkan Nomor HP dengan kode negara, misal +6281234567890"
+              style={{ width: '100%', marginBottom: 16, padding: '8px', backgroundColor: '#fff', color: '#000', border: '1px solid #ccc', borderRadius: 4 }}
+              value={phoneNumber}
+              onChange={(e) => {
+                if (registerFromClaim) return; // Prevent editing if from claim
+                let val = e.target.value;
+                // Ensure it starts with +62 and remove any other prefix
+                if (!val.startsWith('+62')) {
+                  val = val.replace(/^(\+?0*)/, '');
+                  val = '+62' + val;
+                }
+                setPhoneNumber(val);
+              }}
+              readOnly={registerFromClaim}
+            />
+            {loadingOtp && <div className="otp-spinner" style={{ marginBottom: 10 }}></div>}
+            <button 
+              onClick={handleLanjutClick} 
+              disabled={loadingOtp || successMessage !== ''}
+              style={{ 
+                fontSize: '1rem', 
+                backgroundColor: '#f82896ff', 
+                color: 'white', 
+                border: 'none', 
+                padding: '12px 0', 
+                cursor: loadingOtp || successMessage !== '' ? 'not-allowed' : 'pointer', 
+                width: '100%',
+                borderRadius: 6,
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+                ...(buttonPressed ? { transform: 'scale(0.95)', boxShadow: '0 2px 6px rgba(248, 40, 150, 0.6)' } : {})
+              }}
+            >
+              Lanjut
+            </button>
+            <button
+              onClick={() => {
+                // Reset claim registration state if user leaves registration
+                setRegisterFromClaim(false);
+                setClaimedPhone('');
+                navigate('/memberlogin');
+              }}
+              style={{
+                width: '100%',
+                marginTop: 16,
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '6px 0',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                borderRadius: 6
+              }}
+            >
+              Kembali ke Login
+            </button>
+            <div id="recaptcha-container" style={{ marginTop: 20, display: showRecaptcha ? 'block' : 'none' }}></div>
+          </div>
+        </>
+      )}
+
+      {showOtpVerification && (
+        <>
+          <style>{`
+            .otp-verification-box {
+              background-color: #fff;
+              border-radius: 12px;
+              padding: 30px 20px;
+              width: 90%;
+              max-width: 400px;
+              box-sizing: border-box;
+              text-align: center;
+              color: #000;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .otp-inputs {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 20px;
+            }
+            .otp-input {
+              width: 40px;
+              height: 48px;
+              font-size: 1.5rem;
+              text-align: center;
+              border: 1px solid #ccc;
+              border-radius: 6px;
+              background-color: #fff;
+              color: #000;
+              outline: none;
+              transition: border-color 0.2s;
+            }
+            .otp-input:focus {
+              border-color: #f82896ff;
+              box-shadow: 0 0 5px #f82896ff;
+            }
+            .otp-sent-text {
+              font-size: 1rem;
+            }
+            .otp-sent-number {
+              font-weight: bold;
+              color: #000;
+            }
+            .otp-spinner {
+              margin-top: 10px;
+              width: 24px;
+              height: 24px;
+              border: 3px solid #ccc;
+              border-top: 3px solid #333;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin-left: auto;
+              margin-right: auto;
+            }
+          `}</style>
+          <div className="otp-verification-box">
+            <div className="otp-sent-text">
+              Kode verifikasi sudah terkirim lewat SMS ke nomor <span className="otp-sent-number">{phoneNumber}</span>
+            </div>
+            <div className="otp-inputs" style={{ marginTop: 16 }}>
+              {[0,1,2,3,4,5].map(i => (
+                <input
+                  key={i}
+                  id={`otp-input-${i}`}
+                  type="text"
+                  maxLength={1}
+                  className="otp-input"
+                  value={otpCode[i] || ''}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace' && !otpCode[i] && i > 0) {
+                      const prevInput = document.getElementById(`otp-input-${i-1}`);
+                      if (prevInput) prevInput.focus();
+                    }
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoFocus={i === 0}
+                />
+              ))}
+            </div>
+            {successMessage && (
+              <div style={{ color: 'green', marginTop: 16, fontWeight: 'bold' }}>
+                {successMessage}
+              </div>
+            )}
+            {verifyingOtp && <div className="otp-spinner"></div>}
+            <button
+              onClick={() => {
+                setShowOtpVerification(false);
+                setShowRegisterForm(true);
+                setOtpCode('');
+                setOtpSentMessage('');
+                setSuccessMessage('');
+              }}
+              style={{
+                marginTop: 20,
+                backgroundColor: '#f82896ff',
+                color: 'white',
+                border: 'none',
+                padding: '10px 0',
+                width: '100%',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              Kembali ke Form Registrasi
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

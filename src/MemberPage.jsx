@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { EditOutlined, InstagramFilled, PlayCircleFilled } from "@ant-design/icons";
+import { EditOutlined, InstagramFilled, PlayCircleFilled, DownOutlined } from "@ant-design/icons";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { db } from "./firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, query, orderBy } from "firebase/firestore";
 
 export default function MemberPage() {
   const [memberName] = useState("Member Name");
@@ -19,8 +19,10 @@ export default function MemberPage() {
   const [job, setJob] = useState("");
   const [socialMedias, setSocialMedias] = useState([{ platform: '', handle: '' }]);
   const [uid, setUid] = useState(null);
-  const [creationDate, setCreationDate] = useState("");
+  const [memberSince, setMemberSince] = useState(null);
   const navigate = useNavigate();
+  const [transactions, setTransactions] = useState([]); 
+  const [expandedTransactions, setExpandedTransactions] = useState([]); // array of expanded tx indices
 
   // Firestore: Save member data
   async function saveMemberData() {
@@ -57,7 +59,9 @@ export default function MemberPage() {
           if (Array.isArray(data.favoriteBrands)) setFavoriteBrands(data.favoriteBrands);
           if (Array.isArray(data.socialMedias)) setSocialMedias(data.socialMedias);
           if (typeof data.phoneNumber === "string") setPhoneNumber(data.phoneNumber);
-          // creationDate is now set from Auth, not Firestore
+          if (data.accountCreationDate) {
+            setMemberSince(data.accountCreationDate.toDate());
+          }
         }
       } else {
         // If no data, use defaults & set phone number from auth
@@ -84,12 +88,12 @@ export default function MemberPage() {
       }
       setUid(user.uid);
       setPhoneNumber(user.phoneNumber || "");
-      setCreationDate(user.metadata.creationTime);
       loadMemberData(user);
-    });
+      loadTransactions(user.uid); // <- fetch transactions from Firestore
+   });
     return () => unsub();
     // eslint-disable-next-line
-  }, []);
+}, []);
 
   useEffect(() => {
     if (showOverlay) {
@@ -107,11 +111,6 @@ export default function MemberPage() {
     }
   }, [socialMedias]);
 
-  const transactions = [
-    { date: "2025-08-01", value: 50000, quantity: 2 },
-    { date: "2025-07-28", value: 75000, quantity: 3 },
-    { date: "2025-07-15", value: 30000, quantity: 1 },
-  ];
 
   const addFavoriteBrand = () => {
     const trimmed = favoriteBrandInput.trim();
@@ -154,30 +153,94 @@ export default function MemberPage() {
     }
   };
 
+  async function loadTransactions(uid) {
+    if (!uid) return;
+
+    try {
+      // Reference to MemberData/{uid}/transactions
+      const txRef = collection(db, "MemberData", uid, "transactions");
+
+      // Create a query to order by transactionDate descending
+      const q = query(txRef, orderBy("transactionDate", "desc"));
+
+      // Fetch documents
+      const snapshot = await getDocs(q);
+
+      // Transform documents into transactions
+      const txList = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const totalQty = Array.isArray(data.items)
+          ? data.items.reduce((sum, item) => sum + (item.qty || 0), 0)
+          : 0;
+        return {
+          date: data.transactionDate?.toDate ? data.transactionDate.toDate() : null,
+          value: data.totalAmount,
+          quantity: totalQty,
+          items: Array.isArray(data.items)
+            ? data.items.map(it => ({
+                itemName: it.name,
+                qty: it.qty,
+                itemPrice: it.itemPrice,
+                subtotalPrice: it.subtotalPrice,
+              }))
+            : [],
+        };
+      });
+
+      setTransactions(txList);
+
+      // If no memberSince date is set yet, use the earliest transaction date as fallback
+      if (!memberSince && txList.length > 0) {
+        const sortedDates = txList
+          .map(tx => tx.date)
+          .filter(date => date !== null)
+          .sort((a, b) => a - b);
+        
+        if (sortedDates.length > 0) {
+          setMemberSince(sortedDates[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load transactions:", err);
+    }
+  }
   return (
     <div
       style={{
         backgroundColor: "#fff",
-        width: "100vw",
+        width: "100%",
         minHeight: "100vh",
         overflowX: "hidden",
-        padding: "100px",
+        paddingTop: "100px", // Increased padding to ensure content is visible
+        paddingBottom: "32px",
+        paddingLeft: "16px",
+        paddingRight: "16px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        position: "fixed", // Keep the container fixed
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflowY: "auto", // Enable vertical scrolling
       }}
     >
       <div
         style={{
-          width: 100,
-          height: 100,
+          width: "80px",
+          height: "80px",
           borderRadius: "50%",
           backgroundColor: "#d3d3d3",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          fontSize: 50,
+          fontSize: "40px",
           userSelect: "none",
+          minWidth: "80px", // Prevent shrinking
+          minHeight: "80px", // Prevent shrinking
+          aspectRatio: "1/1", // Force 1:1 aspect ratio
+          flexShrink: 0, // Prevent flex container from squishing it
         }}
         aria-label="Profile picture placeholder"
       >
@@ -188,7 +251,7 @@ export default function MemberPage() {
       </h2>
       {/* UID and Check Firestore Data section removed as requested */}
       <p style={{ textAlign: "center", margin: 2 }}>
-        Member Sejak: {creationDate ? new Date(creationDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+        Member Sejak: {memberSince ? memberSince.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
       </p>
       <p style={{ textAlign: "center", margin: 2 }}>
         Nomor Handphone: {phoneNumber ? phoneNumber.replace(/^\+62/, '0') : "-"}
@@ -519,39 +582,145 @@ export default function MemberPage() {
             </button>
           </div>
         )}
-        <div style={{ marginTop: 24 }}>
-          <img
-            src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${phoneNumber ? phoneNumber.replace(/^\+62/, '0') : ''}&scale=3&height=10&includetext=true&filetype=svg&backgroundcolor=ffffff`}
-            alt="Barcode"
-            style={{ width: "300px", height: "70px", objectFit: "contain" }}
-          />
+        <div style={{ 
+          marginTop: 24,
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
+          {phoneNumber && (
+            <img
+              src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${phoneNumber.replace(/^\+62/, '0')}&scale=4&height=20&includetext=false&filetype=svg&backgroundcolor=ffffff`}
+              alt="Barcode"
+              style={{ 
+                width: "300px", 
+                height: "80px", 
+                objectFit: "contain",
+                filter: "contrast(1.1)",
+                imageRendering: "optimizeQuality",
+                margin: "0 auto" // Add horizontal auto margins
+              }}
+            />
+          )}
         </div>
         <p style={{ textAlign: "center", margin: 2 }}>Byu Points: 0</p>
         <h3 style={{ marginTop: 24, marginBottom: 8 }}>Transaksi Sebelumnya</h3>
-        {transactions.map(({ date, value, quantity }, index) => (
-          <div
-            key={index}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
-              maxWidth: "400px",
-              padding: "8px 0",
-              borderBottom: "1px solid #ccc",
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: "bold" }}>
-                {new Date(date).toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+        {transactions.map(({ date, value, quantity, items }, index) => {
+          const isExpanded = expandedTransactions.includes(index);
+          return (
+            <div key={index} style={{ width: "100%", maxWidth: "400px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "8px 0",
+                  borderBottom: "1px solid #ccc",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: "bold" }}>
+                    {date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                  </div>
+                  <div style={{ fontSize: "0.85em" }}>
+                    Rp {(Math.ceil(value / 100) * 100).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div style={{ fontSize: "0.85em" }}>Qty: {quantity}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ color: "#00b300", fontWeight: "bold", alignSelf: "center" }}>
+                    + {Math.floor(value / 2500)} Byu Point
+                  </span>
+                  <button
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "32px",
+                      height: "32px",
+                      background: "transparent",
+                      border: "2px solid #e6e6e6",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      padding: 0,
+                      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                    }}
+                    onClick={() => {
+                      setExpandedTransactions((prev) =>
+                        prev.includes(index)
+                          ? prev.filter((i) => i !== index)
+                          : [...prev, index]
+                      );
+                    }}
+                  >
+                    <DownOutlined 
+                      style={{ 
+                        fontSize: "14px",
+                        color: "#666",
+                      }} 
+                    />
+                  </button>
+                </div>
               </div>
-              <div style={{ fontSize: "0.85em" }}>Rp {value.toLocaleString()}</div>
-              <div style={{ fontSize: "0.85em" }}>Qty: {quantity}</div>
+              {isExpanded && (
+                <div style={{
+                  background: "#f9f9f9",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "6px",
+                  margin: "6px 0 12px 0",
+                  padding: "10px 12px",
+                  fontSize: "0.96em"
+                }}>
+                  <div style={{ fontWeight: "bold", marginBottom: "6px" }}>Item yang Dibeli:</div>
+                  {items.length === 0 && (
+                    <div style={{ color: "#888" }}>Tidak ada item.</div>
+                  )}
+                  {items.map((item, idx) => {
+                    const qty = item.qty || 0;
+                    const perPcs = item.itemPrice;
+                    const total = item.subtotalPrice || 0;
+                    return (
+                      <div key={idx} style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "4px 0",
+                        borderBottom: idx !== items.length - 1 ? "1px solid #eee" : "none"
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{item.itemName || "-"}</div>
+                          <div style={{ fontSize: "0.85em", color: "#666" }}>
+                            {qty} x Rp {perPcs?.toLocaleString?.("id-ID", { maximumFractionDigits: 0 })}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>
+                          Rp {total.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Show grand total for the transaction */}
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0 0 0",
+                    borderTop: "1px solid #ccc",
+                    marginTop: "10px",
+                    fontWeight: "bold"
+                  }}>
+                    <div>Total Transaksi</div>
+                    <div style={{ whiteSpace: "nowrap" }}>
+                      Rp {(Math.ceil(value / 100) * 100).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ color: "green", fontWeight: "bold", alignSelf: "center" }}>
-              + {Math.floor(value / 2500)} Byu Point
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {/* Logout Button */}
         <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: 32 }}>
           <button

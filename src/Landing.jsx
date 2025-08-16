@@ -12,6 +12,17 @@ const images = [
 const Landing = () => {
   const [current, setCurrent] = useState(0);
   const [searchValue, setSearchValue] = useState("");
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [namaKamu, setNamaKamu] = useState("");
   const [nomorHandphone, setNomorHandphone] = useState("");
@@ -73,15 +84,18 @@ const Landing = () => {
       style={{
         backgroundColor: "#f5f5f5",
         color: "#000",
-        height: "100vh",
+        minHeight: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
+        justifyContent: isDesktop ? "center" : "flex-start",
         alignItems: "center",
         fontFamily: "'Nunito', sans-serif",
-        padding: "0 20px",
+        padding: isDesktop ? "0 32px" : "0 16px",
         position: "relative",
         overflow: "hidden",
+        paddingTop: showPromoBar ? (isDesktop ? "60px" : "80px") : "20px",
+        paddingBottom: "60px",
       }}
     >
       {showPromoBar && (
@@ -94,12 +108,19 @@ const Landing = () => {
             backgroundColor: "#f82896ff",
             color: "#fff",
             textAlign: "center",
-            padding: "6px 10px",
+            padding: "10px",
             zIndex: 2000,
             fontWeight: "bold",
             fontStyle: "italic",
-            fontSize: "14px",
-            animation: "slideDown 0.5s ease-out"
+            fontSize: "12px",
+            lineHeight: 1.4,
+            animation: "slideDown 0.5s ease-out",
+            boxSizing: "border-box",
+            maxHeight: "60px",
+            display: "-webkit-box",
+            "-webkit-line-clamp": "2",
+            "-webkit-box-orient": "vertical",
+            overflow: "hidden"
           }}
         >
           GRATIS ONGKIR UNTUK PENGANTARAN 8KM DARI TAMAN SISWA | FOLLOW INSTAGRAM {" "}
@@ -127,7 +148,14 @@ const Landing = () => {
           }
         `}
       </style>
-      <div style={{ position: "relative", width: "100%", maxWidth: "400px", height: "250px", marginBottom: "20px" }}>
+      <div style={{ 
+          position: "relative", 
+          width: "100%", 
+          maxWidth: isDesktop ? "500px" : "400px", 
+          height: isDesktop ? "300px" : "200px", 
+          marginBottom: isDesktop ? "24px" : "16px",
+          aspectRatio: "4/3",
+        }}>
         {images.map((img, idx) => (
           <img
             key={idx}
@@ -140,7 +168,7 @@ const Landing = () => {
               width: "100%",
               height: "100%",
               objectFit: "contain",
-              borderRadius: "15px",
+              borderRadius: "12px",
               opacity: current === idx ? 1 : 0,
               transition: "opacity 1s ease-in-out",
               filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
@@ -149,7 +177,15 @@ const Landing = () => {
         ))}
       </div>
       
-      <h1 style={{ textAlign: "center", margin: "0 10px", marginBottom: "20px", fontWeight: 900 }}>
+      <h1 style={{ 
+          textAlign: "center", 
+          margin: "0 10px", 
+          marginBottom: isDesktop ? "24px" : "16px", 
+          fontWeight: 900,
+          fontSize: isDesktop ? "32px" : "24px",
+          lineHeight: 1.3,
+          maxWidth: isDesktop ? "800px" : "100%",
+        }}>
         Selamat Datang di Byusoul Cosmetics!
       </h1>
       <div style={{ width: "100%", maxWidth: "400px", position: "relative", marginBottom: "20px" }}>
@@ -253,6 +289,8 @@ const Landing = () => {
             justifyContent: "center",
             alignItems: "center",
             zIndex: 1000,
+            padding: "16px",
+            boxSizing: "border-box",
           }}
         >
           <div
@@ -260,7 +298,8 @@ const Landing = () => {
               backgroundColor: "#fff",
               padding: "20px",
               borderRadius: "12px",
-              width: "350px",
+              width: "100%",
+              maxWidth: "350px",
               position: "relative",
             }}
           >
