@@ -70,6 +70,10 @@ const buttonStyle = {
   letterSpacing: "0.02em",
   transition: "all 0.2s",
   boxShadow: "0 4px 12px rgba(248, 40, 150, 0.2)",
+  ":disabled": {
+    opacity: 0.7,
+    cursor: "not-allowed",
+  },
 };
 
 const createAccountButtonStyle = {
@@ -90,25 +94,47 @@ const errorStyle = {
   border: "1px solid #ffcdd2",
 };
 
+const successStyle = {
+  position: "fixed",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  background: "rgba(255, 255, 255, 0.95)",
+  padding: "20px 40px",
+  borderRadius: "12px",
+  boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+  zIndex: 1000,
+  textAlign: "center",
+  animation: "successAnimation 0.5s ease-out forwards",
+};
+
 function MemberLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
     try {
       // Automatically append pseudo-email domain if missing
       const loginEmail = email.includes("@") ? email : email + "@byumember.com";
       // Convert DD/MM/YYYY to DDMMYYYY for authentication
       const passForAuth = password.replace(/\//g, "");
       await signInWithEmailAndPassword(auth, loginEmail, passForAuth);
-      navigate("/memberpage");
+      setShowSuccess(true);
+      // Wait for animation to complete before navigating
+      setTimeout(() => {
+        navigate("/memberpage");
+      }, 1000);
     } catch (err) {
       setError("Email atau tanggal lahir salah");
+      setIsLoading(false);
     }
   };
 
@@ -150,7 +176,75 @@ function MemberLogin() {
           margin: 0;
           padding: 0;
         }
+        @keyframes successAnimation {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -40%) scale(0.8);
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+        @keyframes checkmarkDraw {
+          0% {
+            stroke-dashoffset: 100;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
       `}</style>
+      {showSuccess && (
+        <div style={successStyle}>
+          <div style={{ 
+            width: "48px", 
+            height: "48px", 
+            margin: "0 auto 16px",
+            position: "relative" 
+          }}>
+            <svg 
+              viewBox="0 0 52 52" 
+              style={{
+                width: "100%",
+                height: "100%"
+              }}
+            >
+              <circle
+                cx="26"
+                cy="26"
+                r="25"
+                fill="none"
+                stroke="#eb2f96"
+                strokeWidth="2"
+              />
+              <path
+                d="M14.1 27.2l7.1 7.2 16.7-16.8"
+                fill="none"
+                stroke="#eb2f96"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  strokeDasharray: "100",
+                  strokeDashoffset: "100",
+                  animation: "checkmarkDraw 0.3s ease-in-out 0.2s forwards"
+                }}
+              />
+            </svg>
+          </div>
+          <div style={{ 
+            fontSize: "1.2em",
+            fontWeight: "600",
+            color: "#eb2f96"
+          }}>
+            Login Berhasil
+          </div>
+        </div>
+      )}
       <form style={formStyle} className="member-login-form" onSubmit={handleLogin} autoComplete="on">
         <style>{`
           @media (min-width: 600px) {
@@ -203,7 +297,41 @@ function MemberLogin() {
             />
           </div>
         </div>
-        <button type="submit" style={buttonStyle}>
+        <button 
+          type="submit" 
+          style={{
+            ...buttonStyle,
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px"
+          }}
+          disabled={isLoading}
+        >
+          {isLoading && (
+            <div style={{
+              width: "20px",
+              height: "20px",
+              position: "relative"
+            }}>
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+              <div style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                border: "2px solid rgba(255,255,255,0.3)",
+                borderTopColor: "#fff",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite"
+              }} />
+            </div>
+          )}
           Login
         </button>
         <div style={{ textAlign: "center", marginTop: "12px" }}>

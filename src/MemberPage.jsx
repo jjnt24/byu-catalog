@@ -9,15 +9,15 @@ const containerStyle = {
   position: "fixed",
   top: 0,
   left: 0,
-  height: "100dvh", // Use dynamic viewport height for mobile browser bars
+  height: "100dvh",
   width: "100vw",
   overflowY: "auto",
-  background: "#f7f9fb",
+  background: "linear-gradient(to bottom, #fff0f6, #fff)",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
+  justifyContent: "flex-start",
   flexDirection: "column",
-  padding: "0 8px",
+  padding: "24px 8px",
   boxSizing: "border-box",
 };
 
@@ -230,52 +230,139 @@ export default function MemberPage() {
   }
   return (
     <div style={containerStyle}>
-      <div
-        style={{
-          width: "80px",
-          height: "80px",
-          borderRadius: "50%",
-          backgroundColor: "#d3d3d3",
+      <div style={{
+        background: "white",
+        borderRadius: "16px",
+        padding: "24px",
+        width: "100%",
+        maxWidth: "400px",
+        boxShadow: "0 4px 12px rgba(245,34,45,0.05)",
+        marginBottom: "20px"
+      }}>
+        <h2 style={{ 
+          textAlign: "center", 
+          marginTop: 0, 
+          marginBottom: 4,
+          fontSize: "1.6em",
+          background: "linear-gradient(45deg, #eb2f96, #f759ab)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}>
+          Hi, {name}
+        </h2>
+        
+        <div style={{ 
+          textAlign: "center", 
+          margin: "20px 0",
+          padding: "16px",
+          background: "linear-gradient(135deg, #fff0f6, #ffadd2)",
+          borderRadius: "12px",
+          border: "1px solid rgba(245,34,45,0.1)",
+          boxShadow: "0 2px 8px rgba(245,34,45,0.06)",
+          position: "relative",
+          overflow: "hidden"
+        }}>
+          <div style={{ 
+            fontSize: "1.1em", 
+            fontWeight: "600", 
+            color: "#eb2f96",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px"
+          }}>
+            Byu Points
+          </div>
+          <div style={{ 
+            fontSize: "2em", 
+            fontWeight: "bold",
+            color: "#c41d7f",
+            marginTop: "8px",
+            position: "relative",
+            zIndex: 1
+          }}>
+            {transactions.reduce((total, { value }) => {
+              const points = value >= 50000 ? Math.floor(value / 50000) * 20 : 0;
+              return total + points;
+            }, 0)}
+          </div>
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: "-100%",
+            width: "50%",
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+            animation: "shine 2s infinite",
+            transform: "skewX(-20deg)",
+          }} />
+          <style>
+            {`
+              @keyframes shine {
+                0% { left: -100%; }
+                100% { left: 200%; }
+              }
+            `}
+          </style>
+        </div>
+
+        <div style={{
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "40px",
-          userSelect: "none",
-          minWidth: "80px", // Prevent shrinking
-          minHeight: "80px", // Prevent shrinking
-          aspectRatio: "1/1", // Force 1:1 aspect ratio
-          flexShrink: 0, // Prevent flex container from squishing it
-        }}
-        aria-label="Profile picture placeholder"
-      >
-        👤
+          flexDirection: "column",
+          gap: "8px",
+          color: "#666",
+          fontSize: "0.95em"
+        }}>
+          <p style={{ 
+            textAlign: "center", 
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px"
+          }}>
+            <span style={{ opacity: 0.7 }}>📅</span>
+            Member Sejak: {memberSince ? memberSince.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+          </p>
+          <p style={{ 
+            textAlign: "center", 
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px"
+          }}>
+            <span style={{ opacity: 0.7 }}>📱</span>
+            {phoneNumber ? phoneNumber.replace(/^\+62/, '0') : "-"}
+          </p>
+        </div>
       </div>
-      <h2 style={{ textAlign: "center", marginTop: 16, marginBottom: 4 }}>
-        Hi, {name}
-      </h2>
-      {/* UID and Check Firestore Data section removed as requested */}
-      <p style={{ textAlign: "center", margin: 2 }}>
-        Member Sejak: {memberSince ? memberSince.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
-      </p>
-      <p style={{ textAlign: "center", margin: 2 }}>
-        Nomor Handphone: {phoneNumber ? phoneNumber.replace(/^\+62/, '0') : "-"}
-      </p>
-      <span
+      <button
         style={{
           display: "inline-flex",
           alignItems: "center",
-          color: "#1890ff",
+          justifyContent: "center",
+          gap: "8px",
+          color: "#eb2f96",
           cursor: "pointer",
           fontSize: "0.9em",
           marginTop: 4,
           marginBottom: 8,
-          userSelect: "none"
+          userSelect: "none",
+          background: "white",
+          border: "1px solid #eb2f96",
+          borderRadius: "20px",
+          padding: "6px 16px",
+          transition: "all 0.3s ease",
+          boxShadow: "0 2px 6px rgba(235,47,150,0.1)",
+          ":hover": {
+            background: "#eb2f96",
+            color: "white"
+          }
         }}
         onClick={() => setShowOverlay(true)}
       >
-        <EditOutlined style={{ marginRight: 4 }} />
+        <EditOutlined />
         Edit Profil
-      </span>
+      </button>
       <div style={{ position: "relative", width: "100%", maxWidth: "400px" }}>
         {showOverlay && (
           <div
@@ -608,115 +695,177 @@ export default function MemberPage() {
             />
           )}
         </div>
-        <p style={{ textAlign: "center", margin: 2 }}>Byu Points: 0</p>
-        <h3 style={{ marginTop: 24, marginBottom: 8 }}>Transaksi Sebelumnya</h3>
+        <h3 style={{ 
+          marginTop: 24, 
+          marginBottom: 16,
+          fontSize: "1.3em",
+          color: "#eb2f96",
+          textAlign: "left",
+          width: "100%",
+          maxWidth: "400px"
+        }}>Transaksi Sebelumnya</h3>
         {transactions.map(({ date, value, quantity, items }, index) => {
           const isExpanded = expandedTransactions.includes(index);
           return (
-            <div key={index} style={{ width: "100%", maxWidth: "400px" }}>
+            <div key={index} style={{ 
+              width: "100%", 
+              maxWidth: "400px",
+              background: "white",
+              borderRadius: "12px",
+              marginBottom: "12px",
+              boxShadow: "0 2px 8px rgba(235,47,150,0.08)",
+              overflow: "hidden"
+            }}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  padding: "8px 0",
-                  borderBottom: "1px solid #ccc",
+                  padding: "16px",
+                  borderBottom: isExpanded ? "1px solid #ffd6e7" : "none",
                   alignItems: "center",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                  ":hover": {
+                    backgroundColor: "#fff0f6"
+                  }
+                }}
+                onClick={() => {
+                  setExpandedTransactions((prev) =>
+                    prev.includes(index)
+                      ? prev.filter((i) => i !== index)
+                      : [...prev, index]
+                  );
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: "bold" }}>
+                  <div style={{ 
+                    fontWeight: "600",
+                    color: "#eb2f96",
+                    marginBottom: "4px"
+                  }}>
                     {date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
                   </div>
-                  <div style={{ fontSize: "0.85em" }}>
+                  <div style={{ 
+                    fontSize: "1.1em",
+                    fontWeight: "500",
+                    color: "#262626",
+                    marginBottom: "4px"
+                  }}>
                     Rp {(Math.ceil(value / 100) * 100).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                   </div>
-                  <div style={{ fontSize: "0.85em" }}>Qty: {quantity}</div>
+                  <div style={{ 
+                    fontSize: "0.9em",
+                    color: "#8c8c8c"
+                  }}>Qty: {quantity}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ color: "#00b300", fontWeight: "bold", alignSelf: "center" }}>
-                    + {Math.floor(value / 2500)} Byu Point
-                  </span>
-                  <button
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "32px",
-                      height: "32px",
-                      background: "transparent",
-                      border: "2px solid #e6e6e6",
-                      borderRadius: "50%",
-                      cursor: "pointer",
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 12 
+                }}>
+                  {value >= 50000 && (
+                    <div style={{ 
+                      background: "#fff0f6", 
+                      border: "1px solid #ffadd2",
+                      borderRadius: "16px",
+                      padding: "4px 12px",
+                      color: "#c41d7f",
+                      fontWeight: "500",
+                      fontSize: "0.9em"
+                    }}>
+                      +{Math.floor(value / 50000) * 20} Points
+                    </div>
+                  )}
+                  <DownOutlined 
+                    style={{ 
+                      fontSize: "14px",
+                      color: "#8c8c8c",
                       transition: "all 0.2s ease",
-                      padding: 0,
                       transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                    onClick={() => {
-                      setExpandedTransactions((prev) =>
-                        prev.includes(index)
-                          ? prev.filter((i) => i !== index)
-                          : [...prev, index]
-                      );
-                    }}
-                  >
-                    <DownOutlined 
-                      style={{ 
-                        fontSize: "14px",
-                        color: "#666",
-                      }} 
-                    />
-                  </button>
+                    }} 
+                  />
                 </div>
               </div>
               {isExpanded && (
                 <div style={{
-                  background: "#f9f9f9",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "6px",
-                  margin: "6px 0 12px 0",
-                  padding: "10px 12px",
+                  background: "#fafafa",
+                  padding: "16px",
                   fontSize: "0.96em"
                 }}>
-                  <div style={{ fontWeight: "bold", marginBottom: "6px" }}>Item yang Dibeli:</div>
+                  <div style={{ 
+                    fontWeight: "600", 
+                    marginBottom: "12px",
+                    color: "#262626"
+                  }}>Item yang Dibeli:</div>
                   {items.length === 0 && (
-                    <div style={{ color: "#888" }}>Tidak ada item.</div>
+                    <div style={{ 
+                      color: "#8c8c8c",
+                      fontStyle: "italic",
+                      textAlign: "center",
+                      padding: "12px"
+                    }}>Tidak ada item.</div>
                   )}
-                  {items.map((item, idx) => {
-                    const qty = item.qty || 0;
-                    const perPcs = item.itemPrice;
-                    const total = item.subtotalPrice || 0;
-                    return (
-                      <div key={idx} style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "4px 0",
-                        borderBottom: idx !== items.length - 1 ? "1px solid #eee" : "none"
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: 500 }}>{item.itemName || "-"}</div>
-                          <div style={{ fontSize: "0.85em", color: "#666" }}>
-                            {qty} x Rp {perPcs?.toLocaleString?.("id-ID", { maximumFractionDigits: 0 })}
+                  <div style={{ 
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px"
+                  }}>
+                    {items.map((item, idx) => {
+                      const qty = item.qty || 0;
+                      const perPcs = item.itemPrice;
+                      const total = item.subtotalPrice || 0;
+                      return (
+                        <div key={idx} style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          background: "white",
+                          borderRadius: "8px",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                        }}>
+                          <div>
+                            <div style={{ 
+                              fontWeight: 500,
+                              color: "#262626",
+                              marginBottom: "4px"
+                            }}>{item.itemName || "-"}</div>
+                            <div style={{ 
+                              fontSize: "0.9em",
+                              color: "#8c8c8c"
+                            }}>
+                              {qty} x Rp {perPcs?.toLocaleString?.("id-ID", { maximumFractionDigits: 0 })}
+                            </div>
+                          </div>
+                          <div style={{ 
+                            textAlign: "right",
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                            color: "#1890ff"
+                          }}>
+                            Rp {total.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                           </div>
                         </div>
-                        <div style={{ textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>
-                          Rp {total.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                   {/* Show grand total for the transaction */}
                   <div style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    padding: "8px 0 0 0",
-                    borderTop: "1px solid #ccc",
-                    marginTop: "10px",
+                    marginTop: "16px",
+                    padding: "12px",
+                    background: "#f0f5ff",
+                    borderRadius: "8px",
                     fontWeight: "bold"
                   }}>
-                    <div>Total Transaksi</div>
-                    <div style={{ whiteSpace: "nowrap" }}>
+                    <div style={{ color: "#262626" }}>Total Transaksi</div>
+                    <div style={{ 
+                      color: "#1890ff",
+                      fontSize: "1.1em",
+                      whiteSpace: "nowrap" 
+                    }}>
                       Rp {(Math.ceil(value / 100) * 100).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                     </div>
                   </div>
@@ -725,27 +874,60 @@ export default function MemberPage() {
             </div>
           );
         })}
-        {/* Logout Button */}
-        <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: 32 }}>
+        {/* Navigation Buttons */}
+        <div style={{ 
+          width: "100%", 
+          display: "flex", 
+          justifyContent: "center", 
+          gap: "12px",
+          marginTop: 32,
+          padding: "0 16px"
+        }}>
           <button
             style={{
-              padding: "10px 24px",
+              flex: 1,
+              padding: "12px",
               fontSize: "1em",
-              background: "#1890ff",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
+              background: "white",
+              color: "#eb2f96",
+              border: "1px solid #eb2f96",
+              borderRadius: "8px",
               cursor: "pointer",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              marginTop: "8px",
-              minWidth: "120px",
+              boxShadow: "0 2px 6px rgba(235,47,150,0.1)",
+              maxWidth: "200px",
+              transition: "all 0.2s ease",
+              ":hover": {
+                background: "#fff0f6"
+              }
             }}
             onClick={() => {
-              // Optionally sign out user here, but for now just navigate
               navigate("/", { replace: true });
             }}
           >
-            Logout
+            Kembali ke Home
+          </button>
+          <button
+            style={{
+              flex: 1,
+              padding: "12px",
+              fontSize: "1em",
+              background: "#eb2f96",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(235,47,150,0.2)",
+              maxWidth: "200px",
+              transition: "all 0.2s ease",
+              ":hover": {
+                background: "#c41d7f"
+              }
+            }}
+            onClick={() => {
+              navigate("/catalog");
+            }}
+          >
+            Belanja Sekarang
           </button>
         </div>
       </div>
